@@ -1,17 +1,28 @@
-# once_upon_a_time
+# Once Upon a Time
 
-A new Flutter project.
+Stories retold from a new perspective. Can you figure out the what and who?
 
-## Getting Started
+## Credits:
 
-This project is a starting point for a Flutter application.
+> [Castle](https://www.pexels.com/video/blue-skies-above-a-castle-5727153/)
+> via Relaxing Guru
 
-A few resources to get you started if this is your first Flutter project:
+> [Hold Money](https://alitdesign.net/product/hold-money-blackletter-typeface/)
+> via ALIT DESIGN
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+> [LowPoly Book](https://tekilor.itch.io/lowpoly-book)
+> via Tekila
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Special Thanks:
+
+- [Flutter](https://flutter.dev/)
+- Stack Overflow
+- GitHub
+- Google
+- Adobe
+- ScreenFlow
+- Claude
+
+---
+
+Compliments of DTFun LLC 2026
