@@ -1,6 +1,6 @@
-import 'dart:math';
+// import 'dart:math';
 
-import 'package:animated_text_kit/animated_text_kit.dart';
+// import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:once_upon_a_time/barrel.dart';
@@ -44,57 +44,34 @@ class HomeScreen extends StatefulWidget {
 // It feels like the book visual is the play. I should have a book "appear" and
 // open up. Then the story starts flowing. Having
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  bool isInitialized = false;
-  bool showAll = false;
+  bool hasPrev = false;
+  bool isOpened = false;
+  bool isVideoInitialized = false;
+  // bool showAll = false;
   double raggedness = 0;
+  int chapterIndex = 0;
   int parchmentSeed = 0;
-  ScrollController scrollController = ScrollController();
+  List<String> story = [];
 
-  late final AnimatedTextController textController;
-  // late final VideoPlayerController videoController;
+  // final GlobalKey<BookOpenerState> openerKey = GlobalKey();
+  final GlobalKey<PageFlipperState> storybookKey = GlobalKey();
+
+  late final AnimationController entrance;
 
   @override
   void initState() {
     super.initState();
 
-    Random random = Random();
-    parchmentSeed = random.nextInt(420);
-    raggedness = random.nextDouble() * 0.2 + 0.4;
-
-    textController = AnimatedTextController();
-    // videoController =
-    //     VideoPlayerController.asset(
-    //         'assets/vids/once-upon-a-time-castles-contrast.mp4',
-    //       )
-    //       ..initialize().then((_) {
-    //         setState(() {
-    //           videoController.setVolume(0);
-    //           videoController.setLooping(true);
-    //           videoController.play();
-    //         });
-    //       });
-
-    // scrollController.animateTo(
-    //   500,
-    //   duration: const Duration(seconds: 3),
-    //   curve: Curves.linear,
-    // );
+    entrance = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..forward();
+    story = Story.storyExample1.chapters;
   }
-
-  // Future<void> delayBackground() async {
-  //   await Future.delayed(Duration(milliseconds: 1000));
-  //   setState(() {
-  //     videoController.play();
-  //   });
-  // }
 
   @override
   void dispose() {
-    scrollController.dispose();
-    textController.pause();
-    textController.dispose();
-    // videoController.pause();
-    // videoController.dispose();
+    entrance.dispose();
     super.dispose();
   }
 
@@ -102,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Texxt('Once Upon a Time', isOlde: true),
+        title: Texxt('Once Upon a Time', isOlde: true, useDark: false),
         actions: [
           // IconButton(
           //   icon: Icon(Icons.info_outline),
@@ -148,243 +125,101 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           //       ),
         ],
       ),
+      floatingActionButton: buildStorybookActions(),
       body: LayoutBuilder(
         builder: (context, constraints) {
+          double height = constraints.maxHeight;
+          double width = constraints.maxWidth;
+
           return Stack(
             children: [
               BackgroundVideo(
                 isInitialized: () {
-                  print('isInitialized');
+                  // print('isVideoInitialized');
                   setState(() {
-                    isInitialized = true;
+                    isVideoInitialized = true;
                   });
                 },
               ),
               ...buildBackgroundVeil(
                 context,
                 Theme.of(context).colorScheme.inverseSurface.withAlpha(100),
-                constraints.maxHeight,
-                constraints.maxWidth,
+                height,
+                width,
               ),
-              // Container(
-              //   margin: const EdgeInsets.symmetric(horizontal: 10),
-              //   child: BookFlip.builder(
-              //     // fit: BookFit.contain,
-              //     pageCount: 6,
-              //     pageSize: const Size(360, 500),
-              //     pageBuilder: (context, index) => ColoredBox(
-              //       // color: Colors.primaries[index % Colors.primaries.length],
-              //       color: Theme.of(context).primaryColor,
-              //       child: Center(
-              //         child: Text(
-              //           // 'Page ${index + 1}',
-              //           Story.storyExample1.chapters[index],
-              //           style: const TextStyle(
-              //             fontSize: 12,
-              //             color: Colors.white,
-              //           ),
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
-              // BookFlip.builder(
-              //   material: BookFlipMaterial.magazine,
-              //   pageCount: 6,
-              //   pageSize: const Size(360, 500),
-              //   pageBuilder: (context, index) => Center(
-              //     child: Text(
-              //       'Page ${index + 1}',
-              //       style: const TextStyle(fontSize: 48, color: Colors.white),
-              //     ),
-              //   ),
-              // ),
-              // BookFlip.builder(
-              //   material: BookFlipMaterial.paper,
-              //   pageCount: 6,
-              //   pageSize: const Size(360, 500),
-              //   pageBuilder: (context, i) =>
-              //       Center(child: Text('Page ${i + 1}')),
-              // ),
-              // Positioned(
-              //   child: BookFlip.widgets(
-              //     // fit: BookFit.fill,
-              //     pageSize: const Size(360, 500),
-              //     pages: const [
-              //       Center(child: Text('Once upon a time...')),
-              //       ColoredBox(color: Color(0xFFFFF3E0)),
-              //       ColoredBox(color: Color(0xFFE3F2FD)),
-              //       Center(child: Text('...the end.')),
-              //     ],
-              //   ),
-              // ),
-              // Container(
-              //   margin: const EdgeInsets.only(left: 50, right: 50, top: 25),
-              //   child: ParchmentContainer(
-              //     raggedness: raggedness,
-              //     seed: parchmentSeed,
-              //     height: constraints.maxHeight,
-              //     width: constraints.maxWidth,
-              //     child: const SizedBox(),
-              //   ),
-              // ),
-              // // Container(
-              // //   height: constraints.maxHeight,
-              // //   width: constraints.maxWidth,
-              // //   margin: const EdgeInsets.only(
-              // //     bottom: 10,
-              // //     left: 75,
-              // //     right: 75,
-              // //     top: 50,
-              // //   ),
-              // //   child: GestureDetector(
-              // //     onTap: () {
-              // //       print('showAll');
-              // //       setState(() {
-              // //         showAll = true;
-              // //       });
-              // //     },
-              // //     // child: Marquee(
-              // //     //   text:
-              // //     //       'There once was a boy who told this story about a boy: That way you don\'t need to manually thread constraints through — both stack layers just match the outer SizedBox automatically. Either approach gets you the same result, so keep whichever feels cleaner in your version. And yeah — the random seed/raggedness generator is a nice touch, gives you a fresh "torn" look each load instead of the same shape every time. Have fun tweaking it! Oh but also, I just need a little more from you...',
-              // //     //   scrollAxis: Axis.vertical,
-              // //     // ),
-              // //     child: SingleChildScrollView(
-              // //       controller: scrollController,
-              // //       child: AnimatedTextKit(
-              // //         controller: textController,
-              // //         onNext: (index, last) {
-              // //           print('onNext index: $index');
-              // //           print('onNext last: $last');
-              // //         },
-              // //         onNextBeforePause: (index, last) {
-              // //           print('onNextBeforePause index: $index');
-              // //           print('onNextBeforePause last: $last');
-              // //         },
-              // //         isRepeatingAnimation: false,
-              // //         // totalRepeatCount: 1,
-              // //         displayFullTextOnTap: true,
-              // //         pause: const Duration(milliseconds: 1000),
-              // //         stopPauseOnTap: true,
-              // //         // repeatForever: true,
-              // //         onTap: () {
-              // //           print('animated text kit tap');
-              // //         },
-              // //         onFinished: () {
-              // //           print('onFinished');
-              // //           scrollController.animateTo(
-              // //             500,
-              // //             duration: const Duration(seconds: 3),
-              // //             curve: Curves.linear,
-              // //           );
-              // //         },
-              // //         animatedTexts: [
-              // //           // TyperAnimatedText(
-              // //           //   'That way you don\'t need to manually thread constraints through — both stack layers just match the outer SizedBox automatically.',
-              // //           //   textStyle: TextStyle(
-              // //           //     color: Theme.of(context).primaryColor,
-              // //           //     // fontFamily: "HoldMoney",
-              // //           //     fontSize: 32.0,
-              // //           //   ),
-              // //           //   speed: const Duration(milliseconds: 30),
-              // //           // ),
-              // //           TyperAnimatedText(
-              // //             'That way you don\'t need to manually thread constraints through — both stack layers just match the outer SizedBox automatically. Either approach gets you the same result, so keep whichever feels cleaner in your version. And yeah — the random seed/raggedness generator is a nice touch, gives you a fresh "torn" look each load instead of the same shape every time. Have fun tweaking it! Oh but also, I just need a little more from you...',
-              // //             textStyle: TextStyle(
-              // //               color: Theme.of(context).primaryColor,
-              // //               // fontFamily: "HoldMoney",
-              // //               fontSize: 32.0,
-              // //             ),
-              // //             speed: const Duration(milliseconds: 30),
-              // //           ),
-              // //         ],
-              // //       ),
-              // //     ),
-              // //   ),
-              // //   // child: const Text(
-              // //   //   'That way you don\'t need to manually thread constraints through — both stack layers just match the outer SizedBox automatically. Either approach gets you the same result, so keep whichever feels cleaner in your version. And yeah — the random seed/raggedness generator is a nice touch, gives you a fresh "torn" look each load instead of the same shape every time. Have fun tweaking it!',
-              // //   //   style: TextStyle(fontFamily: 'Georgia', fontSize: 16),
-              // //   // ),
-              // // ),
-              // // ScrollBanner(
-              // //   width: constraints.maxWidth,
-              // //   height: constraints.maxHeight,
-              // //   child: Texxt('test'),
-              // // ),
-              // Container(
-              //   height: constraints.maxHeight,
-              //   width: constraints.maxWidth,
-              //   margin: const EdgeInsets.only(
-              //     bottom: 10,
-              //     left: 75,
-              //     right: 75,
-              //     top: 50,
-              //   ),
-              //   child: FlipPage(
-              //     pages: [
-              //       Container(
-              //         color: Colors.amber,
-              //         child: Center(child: Text('1')),
-              //       ),
-              //       Container(
-              //         color: Colors.teal,
-              //         child: Center(child: Text('2')),
-              //       ),
-              //       // AnimatedTextKit(
-              //       //   controller: textController,
-              //       //   onNext: (index, last) {
-              //       //     print('onNext index: $index');
-              //       //     print('onNext last: $last');
-              //       //   },
-              //       //   onNextBeforePause: (index, last) {
-              //       //     print('onNextBeforePause index: $index');
-              //       //     print('onNextBeforePause last: $last');
-              //       //   },
-              //       //   isRepeatingAnimation: false,
-              //       //   // totalRepeatCount: 1,
-              //       //   displayFullTextOnTap: true,
-              //       //   pause: const Duration(milliseconds: 1000),
-              //       //   stopPauseOnTap: true,
-              //       //   // repeatForever: true,
-              //       //   onTap: () {
-              //       //     print('animated text kit tap');
-              //       //   },
-              //       //   onFinished: () {
-              //       //     print('onFinished');
-              //       //     // scrollController.animateTo(
-              //       //     //   500,
-              //       //     //   duration: const Duration(seconds: 3),
-              //       //     //   curve: Curves.linear,
-              //       //     // );
-              //       //   },
-              //       //   animatedTexts: [
-              //       //     // TyperAnimatedText(
-              //       //     //   'That way you don\'t need to manually thread constraints through — both stack layers just match the outer SizedBox automatically.',
-              //       //     //   textStyle: TextStyle(
-              //       //     //     color: Theme.of(context).primaryColor,
-              //       //     //     // fontFamily: "HoldMoney",
-              //       //     //     fontSize: 32.0,
-              //       //     //   ),
-              //       //     //   speed: const Duration(milliseconds: 30),
-              //       //     // ),
-              //       //     TyperAnimatedText(
-              //       //       'That way you don\'t need to manually thread constraints through — both stack layers just match the outer SizedBox automatically. Either approach gets you the same result, so keep whichever feels cleaner in your version. And yeah — the random seed/raggedness generator is a nice touch, gives you a fresh "torn" look each load instead of the same shape every time. Have fun tweaking it! Oh but also, I just need a little more from you...',
-              //       //       textStyle: TextStyle(
-              //       //         color: Theme.of(context).primaryColor,
-              //       //         // fontFamily: "HoldMoney",
-              //       //         fontSize: 32.0,
-              //       //       ),
-              //       //       speed: const Duration(milliseconds: 30),
-              //       //     ),
-              //       //   ],
-              //       // ),
-              //       Container(
-              //         color: Colors.indigo,
-              //         child: Center(child: Text('3')),
-              //       ),
-              //     ],
-              //   ),
-              // ),
+              Center(
+                child: AnimatedBuilder(
+                  animation: entrance,
+                  builder: (context, child) {
+                    final slide = Curves.easeOutBack.transform(entrance.value);
+                    return Transform.translate(
+                      offset: Offset(0, (1 - slide) * -300),
+                      child: child,
+                    );
+                  },
+                  child: Storybook(
+                    width: width,
+                    height: height,
+                    frontCover: Container(
+                      alignment: Alignment.centerLeft,
+                      margin: const EdgeInsets.only(right: 25),
+                      child: Image.asset(
+                        'assets/images/storybook-cover.png',
+                        scale: 0.1,
+                      ),
+                    ),
+                    pages: const SizedBox(),
+                    onOpened: () {
+                      setState(() {
+                        isOpened = true;
+                      });
+                    },
+                  ),
+                ),
+              ),
+
+              // TODO: come back to this and see how best to handle
+              // height > 400 && isOpened
+              //     ? buildStorybookContent(height, width)
+              //     : const SizedBox(),
+              if (isOpened) ...[
+                PageFlipper(
+                  key: storybookKey,
+                  width: width,
+                  height: height,
+                  // spineOffset: height / 10 > 55 ? 55 : height / 10, // 70,
+                  spineOffset: height / 10 > 70 ? 70 : height / 10, // 70,
+                  pageCount: story.length,
+                  pageBuilder: (context, index, isVisible) =>
+                      buildStorybookContent(isVisible, height, width, index),
+                  // pageBackBuilder: (context, index, isVisible) =>
+                  //     Container(width: 100, height: 100, color: Colors.red),
+                  // pageBuilder: (context, index, isVisible) => PageContainerTemp(
+                  //   // DACO
+                  //   // height: bookHeight,
+                  //   // height: isPortrait ? bookHeight : constraints.maxHeight,
+                  //   // height: isPortrait ? width - 125 : height,
+                  //   height: height,
+                  //   // width: bookWidth,
+                  //   // width: isPortrait
+                  //   //     ? width - 230 + 0
+                  //   //     // (constraints.maxHeight / 10)
+                  //   //     : width,
+                  //   width: width,
+                  //   seed: index,
+                  //   // Note: the value of index isn't correct on prev; it's
+                  //   // losing an extra "1"
+                  //   text: isVisible ? 'Page ${index + 1}' : '',
+                  // ),
+                  onPageChanged: (value) {
+                    // The new index being shown, i.e. Page {$value + 1}
+                    print('onPageChanged: Page ${value + 1}');
+                    setState(() {
+                      chapterIndex = value;
+                    });
+                  },
+                ),
+              ],
             ],
           );
         },
@@ -408,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         width: width,
         color: Theme.of(
           context,
-        ).scaffoldBackgroundColor.withAlpha(isInitialized ? 100 : 255),
+        ).scaffoldBackgroundColor.withAlpha(isVideoInitialized ? 100 : 255),
       ),
       // Left
       Positioned(
@@ -467,5 +302,136 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
     ];
+  }
+
+  Widget buildStorybookActions() {
+    return Container(
+      padding: const EdgeInsets.only(left: 30),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          chapterIndex < 1
+              ? emptyFlaction()
+              : FloatingActionButton(
+                  heroTag: 'prevChp',
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadiusGeometry.circular(100),
+                  ),
+                  onPressed: chapterIndex < 1
+                      ? null
+                      : () {
+                          print('prev chp');
+                          setState(() {
+                            chapterIndex -= 1;
+                          });
+                          storybookKey.currentState?.prevPage();
+                        },
+                  child: Icon(Icons.arrow_back),
+                ),
+          FloatingActionButton(
+            heroTag: 'solve',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadiusGeometry.circular(100),
+            ),
+            onPressed: () {
+              print('solve');
+            },
+            child: Icon(Icons.auto_fix_high),
+          ),
+          chapterIndex + 1 >= story.length
+              ? emptyFlaction()
+              : FloatingActionButton(
+                  heroTag: 'goOn',
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadiusGeometry.circular(100),
+                  ),
+                  onPressed: () {
+                    print('go on');
+                    if (chapterIndex + 1 < story.length) {
+                      setState(() {
+                        chapterIndex += 1;
+                      });
+                      storybookKey.currentState?.nextPage();
+                    }
+                  },
+                  child: Icon(Icons.auto_stories),
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildStorybookContent(
+    bool isVisible,
+    double height,
+    double width,
+    int index,
+  ) {
+    // bool isPortrait = height > width;
+
+    return Align(
+      alignment: AlignmentGeometry.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(
+          minHeight: 300,
+          // maxHeight: height > width ? width - 100 : height - 100,
+          // Note: height isn't perfect; there's some relationship
+          // that's missing based on the current width
+          maxHeight: height > width
+              ? width - 70
+              // : height - (height / 200 < 100 ? 100 : height / 200),
+              : height - 100,
+          minWidth: 250,
+          maxWidth: width > height + 175 ? height - 175 : width - 175,
+        ),
+        // constraints: BoxConstraints(
+        //   minHeight: 300,
+        //   // maxHeight: height > width ? width - 100 : height - 100,
+        //   // Note: height isn't perfect; there's some relationship
+        //   // that's missing based on the current width
+        //   maxHeight: height > width
+        //       ? width - 100
+        //       // : height - (height / 200 < 100 ? 100 : height / 200),
+        //       : height - 100,
+        //   minWidth: 250,
+        //   maxWidth: width > height ? height - 250 : width - 175,
+        // ),
+        decoration: BoxDecoration(
+          border: Border.all(),
+          color: Colors.deepPurple.shade100.withAlpha(255),
+        ),
+        // margin: EdgeInsets.only(left: height / 10 > 50 ? 50 : height / 10),
+        padding: const EdgeInsets.all(20),
+        height: height,
+        width: width,
+        child: GestureDetector(
+          onLongPress: () {
+            print('($width, $height)');
+          },
+          child: SingleChildScrollView(
+            child: isVisible
+                ? Texxt(
+                    story[index]
+                        .replaceAll('. ', '.\n\n')
+                        .replaceAll('! ', '!\n\n')
+                        .replaceAll('? ', '?\n\n'),
+                    size: 12 + (width > height ? height / 25 : width / 25),
+                  )
+                : const SizedBox(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget emptyFlaction() {
+    return FloatingActionButton(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      onPressed: null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.circular(100),
+      ),
+    );
   }
 }
