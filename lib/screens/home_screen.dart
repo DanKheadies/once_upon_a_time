@@ -1,9 +1,24 @@
 // import 'dart:math';
 
 // import 'package:animated_text_kit/animated_text_kit.dart';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:once_upon_a_time/barrel.dart';
+
+// Future<ui.FragmentShader> loadPageShader() async {
+//   try {
+//     final program = await ui.FragmentProgram.fromAsset(
+//       'assets/shaders/page_curl.frag',
+//     );
+//     print('shader OK');
+//     return program.fragmentShader();
+//   } catch (e) {
+//     print('error: $e');
+//     throw Exception();
+//   }
+// }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,6 +67,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int chapterIndex = 0;
   int parchmentSeed = 0;
   List<String> story = [];
+  String exampleText =
+      'If this never prints, the widget isn\'t in the tree at all — easy to do if it\'s built conditionally and that condition isn\'t true yet, or if it\'s nested inside something that hasn\'t been reached.';
+
+  bool hasShader = false;
+  bool showShader = false;
+  // late ui.FragmentShader pageShader;
+
+  PageImageCache? _imageCache;
+  ui.FragmentShader? curlShader;
 
   // final GlobalKey<BookOpenerState> openerKey = GlobalKey();
   final GlobalKey<PageFlipperState> storybookKey = GlobalKey();
@@ -66,12 +90,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..forward();
+    loadShader();
     story = Story.storyExample1.chapters;
+  }
+
+  Future<void> loadShader() async {
+    // pageShader = await loadPageShader();
+    final program = await ui.FragmentProgram.fromAsset(
+      'assets/shaders/page_curl.frag',
+    );
+    setState(() {
+      curlShader = program.fragmentShader();
+      hasShader = true;
+    });
+    await Future.delayed(Duration(milliseconds: 100));
+    setState(() {
+      showShader = true;
+    });
   }
 
   @override
   void dispose() {
+    curlShader?.dispose();
     entrance.dispose();
+    // pageShader.dispose();
     super.dispose();
   }
 
@@ -81,29 +123,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       appBar: AppBar(
         title: Texxt('Once Upon a Time', isOlde: true, useDark: false),
         actions: [
-          // IconButton(
-          //   icon: Icon(Icons.info_outline),
-          //   onPressed: () {
-          //     ScaffoldMessenger.of(context)
-          //       ..clearSnackBars()
-          //       ..showSnackBar(SnackBar(content: Text('TODO')));
-          //   },
-          // ),
-          // IconButton(
-          //   icon: Icon(Icons.restore),
-          //   onPressed: () {
-          //     print('reset');
-          //     scrollController.jumpTo(0);
-          //     // textController.pause();
-          //     textController.reset();
-          //     // textController.play();
-          //   },
-          // ),
           IconButton(
             icon: Icon(Icons.navigate_next),
             onPressed: () {
               print('book');
-              context.goNamed('book');
+              context.goNamed('curling');
             },
           ),
           // videoController.value.isInitialized
@@ -133,6 +157,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           return Stack(
             children: [
+              PageTextureCapture(
+                pageCount: story.length, // _pageCount,
+                pageWidth: width, // _flipAreaWidth,
+                pageHeight: height, // _pageHeight,
+                // pageBuilder: _pageContent,
+                pageBuilder: (context, index) => ParchmentPagePlaceholder(
+                  height: 500, // height
+                  width: width,
+                  seed: index,
+                  text: '${index + 1} $exampleText',
+                ),
+                onReady: (cache) {
+                  debugPrint('onReady fired, cache.isReady = ${cache.isReady}');
+                  setState(
+                    () => _imageCache = cache,
+                  ); // <- the setState was the missing piece
+                },
+              ),
+
               BackgroundVideo(
                 isInitialized: () {
                   // print('isVideoInitialized');
@@ -182,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               // height > 400 && isOpened
               //     ? buildStorybookContent(height, width)
               //     : const SizedBox(),
-              if (isOpened) ...[
+              if (isOpened && hasShader) ...[
                 PageFlipper(
                   key: storybookKey,
                   width: width,
@@ -191,7 +234,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   spineOffset: height / 10 > 70 ? 70 : height / 10, // 70,
                   pageCount: story.length,
                   pageBuilder: (context, index, isVisible) =>
-                      buildStorybookContent(isVisible, height, width, index),
+                      // buildStorybookContent(isVisible, height, width, index),
+                      ParchmentPagePlaceholder(
+                        height: 500, // height
+                        width: width,
+                        seed: index,
+                        text: isVisible ? '${index + 1} $exampleText' : '',
+                      ),
+                  pageImageCache: _imageCache!,
+                  // curlShader: pageShader,
+                  curlShader: curlShader!,
+                  // pageBackBuilder: (context, index, isVisible) =>
+                  //     buildStorybookContent(isVisible, height, width, index),
                   // pageBackBuilder: (context, index, isVisible) =>
                   //     Container(width: 100, height: 100, color: Colors.red),
                   // pageBuilder: (context, index, isVisible) => PageContainerTemp(

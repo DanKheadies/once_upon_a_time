@@ -1,5 +1,7 @@
-import 'dart:math' as math;
+// import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:once_upon_a_time/barrel.dart';
 
 /// ============================================================================
 /// PageFlipper
@@ -40,11 +42,20 @@ class PageFlipper extends StatefulWidget {
   final Widget Function(BuildContext context, int index, bool isVisible)?
   pageBackBuilder;
 
+  /// Pre-captured page textures (see PageTextureCapture / PageImageCache
+  /// in curling_page.dart) and the loaded curl shader. Both are handed in
+  /// from above since they're async to produce and shouldn't be recreated
+  /// every time this widget rebuilds.
+  final PageImageCache pageImageCache;
+  final ui.FragmentShader curlShader;
+
   const PageFlipper({
     super.key,
+    required this.curlShader,
     required this.height,
     required this.pageBuilder,
     required this.pageCount,
+    required this.pageImageCache,
     required this.spineOffset,
     required this.width,
     this.pageBackBuilder,
@@ -128,108 +139,135 @@ class PageFlipperState extends State<PageFlipper>
                   builder: (context, child) {
                     final t = controller.value;
 
-                    // Forward: the sheet starts flat (angle 0) and rotates
-                    // AWAY, ending fully turned (angle -pi).
-                    // Backward: the sheet we're animating is the PREVIOUS
-                    // one - it starts already fully turned (angle -pi, which
-                    // is why its back face matches what's currently flat on
-                    // screen - no visual jump at drag start) and rotates
-                    // back TO flat (angle 0) as the drag completes.
-                    final angle = forward ? math.pi * t : math.pi * (1 - t);
-
-                    // Which physical sheet is animating, and which of its
-                    // two faces is pointed at the viewer right now. Using
-                    // the angle itself (not raw t) keeps this correct for
-                    // both directions without a separate branch.
+                    // Same sheet-index logic as before: which page's
+                    // captured texture is the one currently curling.
                     final sheetIndex = forward ? currentPage : currentPage - 1;
-                    final showingBack = angle.abs() > (math.pi / 2);
+                    final pageImage = widget.pageImageCache[sheetIndex];
 
-                    final liftShade = math.sin(t * math.pi).clamp(0.0, 1.0);
+                    if (pageImage == null) {
+                      print('DERP');
+                      // Texture not captured yet (still loading) - fall
+                      // back to the flat, undistorted page rather than
+                      // showing nothing.
+                      return buildFace(
+                        context,
+                        sheetIndex,
+                        front: true,
+                        isVisible: true, // !isFlipping,
+                      );
+                    }
 
-                    return Transform(
-                      // The spine never moves - both directions pivot here.
-                      alignment: Alignment.centerLeft,
-                      transform: perspectiveMatrix()..rotateY(angle),
-                      child: Stack(
-                        children: [
-                          if (!showingBack)
-                            Container(
-                              height: widget.height,
-                              width: widget.width,
-                              alignment: AlignmentGeometry.centerLeft,
-                              // margin: const EdgeInsets.only(left: 10),
-                              child: buildFace(
-                                context,
-                                sheetIndex,
-                                front: true,
-                                isVisible: !isFlipping,
-                              ),
-                            )
-                          else
-                            // Note: this is where the "left page" is showing;
-                            // it also aids in the animation, i.e. looks better
-                            // with it in. So I should remove once the animation
-                            // is done.
-                            Center(
-                              child: Transform(
-                                alignment: Alignment.center,
-                                // origin: Offset(-40, 0),
-                                transform: Matrix4.identity()
-                                  // ..rotateY(math.pi)
-                                  ..rotateY(math.pi)
-                                  ..invert(),
-                                child: Container(
-                                  // margin: const EdgeInsets.only(right: 20),
-                                  child: buildFace(
-                                    context,
-                                    sheetIndex,
-                                    front: false,
-                                    isVisible: !isFlipping,
-                                  ),
-                                ),
-                                // Page 2 to 1 on prev dont work right
-                                // child:
-                                //     // 1 + 1 == 2
-                                //     isFlipping || currentPage == 0
-                                //     ? Container(
-                                //         margin: const EdgeInsets.only(left: 50),
-                                //         child: buildFace(
-                                //           context,
-                                //           sheetIndex,
-                                //           front: false,
-                                //           isVisible: !isFlipping,
-                                //         ),
-                                //       )
-                                //     : const SizedBox(),
-                                // child: const SizedBox(),
-                              ),
-                            ),
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  // The pivot is always on the left now, so
-                                  // the lifting/lit edge is always the far
-                                  // (right) edge of the flip area, for both
-                                  // directions.
-                                  gradient: LinearGradient(
-                                    begin: Alignment.centerRight,
-                                    end: Alignment.centerLeft,
-                                    colors: [
-                                      Colors.black.withValues(alpha: 0.0),
-                                      Colors.black.withValues(
-                                        alpha: 0.22 * liftShade,
-                                      ),
-                                    ],
-                                    stops: const [0.6, 1.0],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    return CurlingPage(
+                      pageImage: pageImage,
+                      width: flipAreaWidth,
+                      height: widget.height,
+                      progress: t,
+                      forward: forward,
+                      shader: widget.curlShader,
                     );
+                    // final t = controller.value;
+
+                    // // Forward: the sheet starts flat (angle 0) and rotates
+                    // // AWAY, ending fully turned (angle -pi).
+                    // // Backward: the sheet we're animating is the PREVIOUS
+                    // // one - it starts already fully turned (angle -pi, which
+                    // // is why its back face matches what's currently flat on
+                    // // screen - no visual jump at drag start) and rotates
+                    // // back TO flat (angle 0) as the drag completes.
+                    // final angle = forward ? math.pi * t : math.pi * (1 - t);
+
+                    // // Which physical sheet is animating, and which of its
+                    // // two faces is pointed at the viewer right now. Using
+                    // // the angle itself (not raw t) keeps this correct for
+                    // // both directions without a separate branch.
+                    // final sheetIndex = forward ? currentPage : currentPage - 1;
+                    // final showingBack = angle.abs() > (math.pi / 2);
+
+                    // final liftShade = math.sin(t * math.pi).clamp(0.0, 1.0);
+
+                    // return Transform(
+                    //   // The spine never moves - both directions pivot here.
+                    //   alignment: Alignment.centerLeft,
+                    //   transform: perspectiveMatrix()..rotateY(angle),
+                    //   child: Stack(
+                    //     children: [
+                    //       if (!showingBack)
+                    //         Container(
+                    //           height: widget.height,
+                    //           width: widget.width,
+                    //           alignment: AlignmentGeometry.centerLeft,
+                    //           // margin: const EdgeInsets.only(left: 10),
+                    //           child: buildFace(
+                    //             context,
+                    //             sheetIndex,
+                    //             front: true,
+                    //             isVisible: !isFlipping,
+                    //           ),
+                    //         )
+                    //       else
+                    //         // Note: this is where the "left page" is showing;
+                    //         // it also aids in the animation, i.e. looks better
+                    //         // with it in. So I should remove once the animation
+                    //         // is done.
+                    //         Center(
+                    //           child: Transform(
+                    //             alignment: Alignment.center,
+                    //             origin: Offset(-40, 0),
+                    //             transform: Matrix4.identity()
+                    //               // ..rotateY(math.pi)
+                    //               ..rotateY(math.pi),
+                    //             child: Container(
+                    //               // margin: const EdgeInsets.only(right: 20),
+                    //               child: buildFace(
+                    //                 context,
+                    //                 sheetIndex,
+                    //                 front: false,
+                    //                 isVisible: false, // isFlipping,
+                    //               ),
+                    //             ),
+                    //             // Page 2 to 1 on prev dont work right
+                    //             // child:
+                    //             //     // 1 + 1 == 2
+                    //             //     isFlipping || currentPage == 0
+                    //             //     ? Container(
+                    //             //         margin: const EdgeInsets.only(left: 50),
+                    //             //         child: buildFace(
+                    //             //           context,
+                    //             //           sheetIndex,
+                    //             //           front: false,
+                    //             //           isVisible: !isFlipping,
+                    //             //         ),
+                    //             //       )
+                    //             //     : const SizedBox(),
+                    //             // child: const SizedBox(),
+                    //           ),
+                    //         ),
+                    //       Positioned.fill(
+                    //         child: IgnorePointer(
+                    //           child: DecoratedBox(
+                    //             decoration: BoxDecoration(
+                    //               // The pivot is always on the left now, so
+                    //               // the lifting/lit edge is always the far
+                    //               // (right) edge of the flip area, for both
+                    //               // directions.
+                    //               gradient: LinearGradient(
+                    //                 begin: Alignment.centerRight,
+                    //                 end: Alignment.centerLeft,
+                    //                 colors: [
+                    //                   Colors.black.withValues(alpha: 0.0),
+                    //                   Colors.black.withValues(
+                    //                     alpha: 0.22 * liftShade,
+                    //                   ),
+                    //                 ],
+                    //                 stops: const [0.6, 1.0],
+                    //               ),
+                    //             ),
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // );
                   },
                 ),
               ],
@@ -294,7 +332,6 @@ class PageFlipperState extends State<PageFlipper>
       isFlipping = true;
       controller.value = (controller.value + delta).clamp(0.0, 1.0);
     });
-    print('delta: $delta');
   }
 
   void onForwardDragEnd(DragEndDetails details) => resolveDrag();

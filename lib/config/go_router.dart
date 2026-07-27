@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:once_upon_a_time/screens/_screens.dart';
-import 'package:once_upon_a_time/widgets/book.dart';
+import 'package:once_upon_a_time/barrel.dart';
 
 final GoRouter goRouter = GoRouter(
   routes: [
@@ -21,6 +20,16 @@ final GoRouter goRouter = GoRouter(
       pageBuilder: (context, state) => CustomTransitionPage(
         key: state.pageKey,
         child: const BookDemoPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    ),
+    GoRoute(
+      path: '/curling',
+      name: 'curling',
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const CurlShaderTestScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) =>
             FadeTransition(opacity: animation, child: child),
       ),

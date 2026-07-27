@@ -1,5 +1,6 @@
 export 'background_video.dart';
 export 'book.dart';
+export 'curling_page.dart';
 export 'page_container_temp.dart';
 export 'page_flipper.dart';
 export 'parchment_container.dart';
