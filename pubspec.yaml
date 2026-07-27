@@ -59,4 +59,4 @@ flutter:
   shaders:
     - assets/shaders/fbs_gradient.frag
     - assets/shaders/page_curl.frag
-    - assets/shaders/parchment.frag
+    - assets/shaders/parchment_page.frag

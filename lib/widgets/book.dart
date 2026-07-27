@@ -63,8 +63,8 @@ class _BookDemoPageState extends State<BookDemoPage>
 
   @override
   Widget build(BuildContext context) {
-    const bookWidth = 560.0; // 420.0; // 360.0;
-    const bookHeight = 642.0; // 420.0; // 500.0; // 480.0;
+    // const bookWidth = 560.0; // 420.0; // 360.0;
+    // const bookHeight = 642.0; // 420.0; // 500.0; // 480.0;
     // Images: 560w x 642h
     // 550 space; 70 is the left pages
     // 485 from middle; 70 is the left pages
@@ -650,7 +650,12 @@ class ParchmentPagePlaceholder extends StatelessWidget {
       //   (seed % 5) / 5,
       // )!,
       decoration: BoxDecoration(
-        color: Colors.red.shade100.withAlpha(255),
+        // color: Colors.red.shade100.withAlpha(255),
+        color: Color.lerp(
+          const Color(0xFFF3E3C3),
+          const Color(0xFFE9D5A6),
+          (seed % 5) / 5,
+        )!,
         border: BoxBorder.all(),
       ),
       // DACO

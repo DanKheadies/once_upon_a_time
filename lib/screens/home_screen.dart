@@ -19,6 +19,13 @@ import 'package:once_upon_a_time/barrel.dart';
 //     throw Exception();
 //   }
 // }
+// Future<ui.FragmentShader> loadParchmentPageShader() async {
+//   final program = await ui.FragmentProgram.fromAsset(
+//     'assets/shaders/parchment_page.frag',
+//   );
+//   print('derp');
+//   return program.fragmentShader();
+// }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -72,10 +79,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   bool hasShader = false;
   bool showShader = false;
-  // late ui.FragmentShader pageShader;
+  late ui.FragmentShader pageShader;
 
-  PageImageCache? _imageCache;
-  ui.FragmentShader? curlShader;
+  // PageImageCache? _imageCache;
+  // ui.FragmentShader? curlShader;
 
   // final GlobalKey<BookOpenerState> openerKey = GlobalKey();
   final GlobalKey<PageFlipperState> storybookKey = GlobalKey();
@@ -96,24 +103,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> loadShader() async {
     // pageShader = await loadPageShader();
+    print('a');
     final program = await ui.FragmentProgram.fromAsset(
-      'assets/shaders/page_curl.frag',
+      'assets/shaders/parchment_page.frag',
     );
+    print('b');
     setState(() {
-      curlShader = program.fragmentShader();
+      // curlShader = program.fragmentShader();
+      pageShader = program.fragmentShader();
       hasShader = true;
     });
+    print('c');
     await Future.delayed(Duration(milliseconds: 100));
+    print('d');
     setState(() {
       showShader = true;
     });
+    print('e');
   }
 
   @override
   void dispose() {
-    curlShader?.dispose();
+    // curlShader?.dispose();
     entrance.dispose();
-    // pageShader.dispose();
+    pageShader.dispose();
     super.dispose();
   }
 
@@ -157,25 +170,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           return Stack(
             children: [
-              PageTextureCapture(
-                pageCount: story.length, // _pageCount,
-                pageWidth: width, // _flipAreaWidth,
-                pageHeight: height, // _pageHeight,
-                // pageBuilder: _pageContent,
-                pageBuilder: (context, index) => ParchmentPagePlaceholder(
-                  height: 500, // height
-                  width: width,
-                  seed: index,
-                  text: '${index + 1} $exampleText',
-                ),
-                onReady: (cache) {
-                  debugPrint('onReady fired, cache.isReady = ${cache.isReady}');
-                  setState(
-                    () => _imageCache = cache,
-                  ); // <- the setState was the missing piece
-                },
-              ),
-
+              // PageTextureCapture(
+              //   pageCount: story.length, // _pageCount,
+              //   pageWidth: width, // _flipAreaWidth,
+              //   pageHeight: height, // _pageHeight,
+              //   // pageBuilder: _pageContent,
+              //   pageBuilder: (context, index) => ParchmentPagePlaceholder(
+              //     height: 500, // height
+              //     width: width,
+              //     seed: index,
+              //     text: '${index + 1} $exampleText',
+              //   ),
+              //   onReady: (cache) {
+              //     debugPrint('onReady fired, cache.isReady = ${cache.isReady}');
+              //     setState(
+              //       () => _imageCache = cache,
+              //     ); // <- the setState was the missing piece
+              //   },
+              // ),
               BackgroundVideo(
                 isInitialized: () {
                   // print('isVideoInitialized');
@@ -226,52 +238,81 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               //     ? buildStorybookContent(height, width)
               //     : const SizedBox(),
               if (isOpened && hasShader) ...[
-                PageFlipper(
-                  key: storybookKey,
-                  width: width,
-                  height: height,
-                  // spineOffset: height / 10 > 55 ? 55 : height / 10, // 70,
-                  spineOffset: height / 10 > 70 ? 70 : height / 10, // 70,
-                  pageCount: story.length,
-                  pageBuilder: (context, index, isVisible) =>
-                      // buildStorybookContent(isVisible, height, width, index),
-                      ParchmentPagePlaceholder(
-                        height: 500, // height
-                        width: width,
-                        seed: index,
-                        text: isVisible ? '${index + 1} $exampleText' : '',
-                      ),
-                  pageImageCache: _imageCache!,
-                  // curlShader: pageShader,
-                  curlShader: curlShader!,
-                  // pageBackBuilder: (context, index, isVisible) =>
-                  //     buildStorybookContent(isVisible, height, width, index),
-                  // pageBackBuilder: (context, index, isVisible) =>
-                  //     Container(width: 100, height: 100, color: Colors.red),
-                  // pageBuilder: (context, index, isVisible) => PageContainerTemp(
-                  //   // DACO
-                  //   // height: bookHeight,
-                  //   // height: isPortrait ? bookHeight : constraints.maxHeight,
-                  //   // height: isPortrait ? width - 125 : height,
-                  //   height: height,
-                  //   // width: bookWidth,
-                  //   // width: isPortrait
-                  //   //     ? width - 230 + 0
-                  //   //     // (constraints.maxHeight / 10)
-                  //   //     : width,
-                  //   width: width,
-                  //   seed: index,
-                  //   // Note: the value of index isn't correct on prev; it's
-                  //   // losing an extra "1"
-                  //   text: isVisible ? 'Page ${index + 1}' : '',
-                  // ),
-                  onPageChanged: (value) {
-                    // The new index being shown, i.e. Page {$value + 1}
-                    print('onPageChanged: Page ${value + 1}');
-                    setState(() {
-                      chapterIndex = value;
-                    });
+                // if (isOpened) ...[
+                GestureDetector(
+                  onLongPress: () {
+                    print('($width, $height)');
+                    // For when screenHeight (941) > screenWidth (see below)
+                    // screenWidth = pageHeight (spineOffset) | pageWidth
+                    // 500sw = 320pw x 440ph (75so)
+                    // 670sw = 425pw x 600ph (105so)
+                    // 775sw = 500pw x 700ph (120so)
+                    // > maintains above
+                    // Note: screenWidth >= screenHeight after this point, and
+                    // we maintain. BUT if screen height goes down, we need below
                   },
+                  child: PageFlipper(
+                    key: storybookKey,
+                    width: width,
+                    height: height,
+                    // spineOffset: height / 10 > 55 ? 55 : height / 10, // 70,
+                    // spineOffset: height / 20 > 70 ? 70 : height / 10, // 70,
+                    spineOffset: 75,
+                    pageCount: story.length,
+                    pageBuilder: (context, index, isVisible, showBack) =>
+                        // buildStorybookContent(isVisible, height, width, index),
+                        // PagePlaceholder(
+                        //   height: 440,
+                        //   width: 320,
+                        //   seed: index,
+                        //   text: isVisible ? '${index + 1} $exampleText' : '',
+                        // ),
+                        ParchmentPage(
+                          width: 330,
+                          height: 447.5,
+                          seed: index,
+                          shader: pageShader,
+                          // TODO
+                          // fadeStart: showBack ? 1.0 : 0.0,
+                          // fadeEnd: showBack ? 0.8 : 0.2,
+                          // child: Text('${index + 1} $exampleText'),
+                          child: isVisible
+                              ? Texxt('${index + 1} $exampleText')
+                              // ? const SizedBox()
+                              : const SizedBox(),
+                        ),
+                    // pageImageCache: _imageCache!,
+                    // curlShader: pageShader,
+                    // curlShader: curlShader!,
+                    // pageBackBuilder: (context, index, isVisible) =>
+                    //     buildStorybookContent(isVisible, height, width, index),
+                    // pageBackBuilder: (context, index, isVisible) =>
+                    //     Container(width: 100, height: 100, color: Colors.red),
+                    // pageBuilder: (context, index, isVisible) => PageContainerTemp(
+                    //   // DACO
+                    //   // height: bookHeight,
+                    //   // height: isPortrait ? bookHeight : constraints.maxHeight,
+                    //   // height: isPortrait ? width - 125 : height,
+                    //   height: height,
+                    //   // width: bookWidth,
+                    //   // width: isPortrait
+                    //   //     ? width - 230 + 0
+                    //   //     // (constraints.maxHeight / 10)
+                    //   //     : width,
+                    //   width: width,
+                    //   seed: index,
+                    //   // Note: the value of index isn't correct on prev; it's
+                    //   // losing an extra "1"
+                    //   text: isVisible ? 'Page ${index + 1}' : '',
+                    // ),
+                    onPageChanged: (value) {
+                      // The new index being shown, i.e. Page {$value + 1}
+                      print('onPageChanged: Page ${value + 1}');
+                      setState(() {
+                        chapterIndex = value;
+                      });
+                    },
+                  ),
                 ),
               ],
             ],
