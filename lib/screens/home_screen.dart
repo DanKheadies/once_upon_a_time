@@ -102,24 +102,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> loadShader() async {
-    // pageShader = await loadPageShader();
-    print('a');
     final program = await ui.FragmentProgram.fromAsset(
       'assets/shaders/parchment_page.frag',
     );
-    print('b');
     setState(() {
       // curlShader = program.fragmentShader();
       pageShader = program.fragmentShader();
       hasShader = true;
     });
-    print('c');
     await Future.delayed(Duration(milliseconds: 100));
-    print('d');
     setState(() {
       showShader = true;
     });
-    print('e');
   }
 
   @override
@@ -190,7 +184,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               // ),
               BackgroundVideo(
                 isInitialized: () {
-                  // print('isVideoInitialized');
                   setState(() {
                     isVideoInitialized = true;
                   });
@@ -244,7 +237,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     print('($width, $height)');
                     // For when screenHeight (941) > screenWidth (see below)
                     // screenWidth = pageHeight (spineOffset) | pageWidth
-                    // 500sw = 320pw x 440ph (75so)
+                    // 500sw = 330pw x 447.5ph (75so)
+                    // // 500sw = 320pw x 440ph (75so)
                     // 670sw = 425pw x 600ph (105so)
                     // 775sw = 500pw x 700ph (120so)
                     // > maintains above
@@ -260,51 +254,51 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     spineOffset: 75,
                     pageCount: story.length,
                     pageBuilder: (context, index, isVisible, showBack) =>
-                        // buildStorybookContent(isVisible, height, width, index),
-                        // PagePlaceholder(
-                        //   height: 440,
-                        //   width: 320,
-                        //   seed: index,
-                        //   text: isVisible ? '${index + 1} $exampleText' : '',
-                        // ),
                         ParchmentPage(
                           width: 330,
                           height: 447.5,
                           seed: index,
                           shader: pageShader,
-                          // TODO
-                          // fadeStart: showBack ? 1.0 : 0.0,
-                          // fadeEnd: showBack ? 0.8 : 0.2,
+                          fadeStart: 0.0,
+                          fadeEnd: 0.2,
+                          isFlipped: false,
                           // child: Text('${index + 1} $exampleText'),
                           child: isVisible
                               ? Texxt('${index + 1} $exampleText')
                               // ? const SizedBox()
                               : const SizedBox(),
                         ),
-                    // pageImageCache: _imageCache!,
-                    // curlShader: pageShader,
-                    // curlShader: curlShader!,
-                    // pageBackBuilder: (context, index, isVisible) =>
-                    //     buildStorybookContent(isVisible, height, width, index),
-                    // pageBackBuilder: (context, index, isVisible) =>
-                    //     Container(width: 100, height: 100, color: Colors.red),
-                    // pageBuilder: (context, index, isVisible) => PageContainerTemp(
-                    //   // DACO
-                    //   // height: bookHeight,
-                    //   // height: isPortrait ? bookHeight : constraints.maxHeight,
-                    //   // height: isPortrait ? width - 125 : height,
-                    //   height: height,
-                    //   // width: bookWidth,
-                    //   // width: isPortrait
-                    //   //     ? width - 230 + 0
-                    //   //     // (constraints.maxHeight / 10)
-                    //   //     : width,
-                    //   width: width,
-                    //   seed: index,
-                    //   // Note: the value of index isn't correct on prev; it's
-                    //   // losing an extra "1"
-                    //   text: isVisible ? 'Page ${index + 1}' : '',
+                    // Container(
+                    //   width: 330,
+                    //   height: 447.5,
+                    //   margin: const EdgeInsets.only(bottom: 10),
+                    //   color: Colors.red.shade100,
                     // ),
+                    pageBackBuilder: (context, index, isVisible, showBack) =>
+                        // Container(
+                        //   width: 330,
+                        //   height: 447.5,
+                        //   margin: const EdgeInsets.only(bottom: 10),
+                        //   // color: Colors.red.shade100,
+                        //   decoration: BoxDecoration(
+                        //     gradient: LinearGradient(
+                        //       colors: [
+                        //         Colors.blue.shade100,
+                        //         Colors.red.shade100,
+                        //       ],
+                        //     ),
+                        //   ),
+                        // ),
+                        ParchmentPage(
+                          width: 330,
+                          height: 447.5,
+                          seed: index,
+                          shader: pageShader,
+                          fadeStart: 1,
+                          fadeEnd: 0.8,
+                          isFlipped: true,
+                          child: const SizedBox(),
+                        ),
                     onPageChanged: (value) {
                       // The new index being shown, i.e. Page {$value + 1}
                       print('onPageChanged: Page ${value + 1}');

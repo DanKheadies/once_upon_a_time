@@ -127,17 +127,14 @@ class PageFlipperState extends State<PageFlipper>
             width: flipAreaWidth,
             child: Stack(
               children: [
+                // Static, right page; seen 95% of the time
                 Positioned.fill(
                   child: Container(
                     height: widget.height,
-                    // width: widget.width,
                     width: flipAreaWidth,
-                    // color: Colors.black,
                     alignment: AlignmentGeometry.centerLeft,
-                    // margin: const EdgeInsets.only(left: 10),
                     child: buildFace(
                       context,
-                      // forward ? currentPage + 1 : currentPage - 1,
                       currentPage,
                       front: true,
                       isVisible: !isFlipping,
@@ -147,35 +144,6 @@ class PageFlipperState extends State<PageFlipper>
                 AnimatedBuilder(
                   animation: controller,
                   builder: (context, child) {
-                    // final t = controller.value;
-
-                    // // Same sheet-index logic as before: which page's
-                    // // captured texture is the one currently curling.
-                    // final sheetIndex = forward ? currentPage : currentPage - 1;
-                    // final pageImage = widget.pageImageCache[sheetIndex];
-
-                    // if (pageImage == null) {
-                    //   print('DERP');
-                    //   // Texture not captured yet (still loading) - fall
-                    //   // back to the flat, undistorted page rather than
-                    //   // showing nothing.
-                    //   return buildFace(
-                    //     context,
-                    //     sheetIndex,
-                    //     front: true,
-                    //     isVisible: true, // !isFlipping,
-                    //   );
-                    // }
-
-                    // return CurlingPage(
-                    //   pageImage: pageImage,
-                    //   width: flipAreaWidth,
-                    //   height: widget.height,
-                    //   progress: t,
-                    //   forward: forward,
-                    //   shader: widget.curlShader,
-                    // );
-
                     final t = controller.value;
 
                     // Forward: the sheet starts flat (angle 0) and rotates
@@ -204,11 +172,7 @@ class PageFlipperState extends State<PageFlipper>
                         children: [
                           if (!showingBack)
                             Container(
-                              // height: widget.height,
-                              // width: widget.width,
-                              // color: Colors.red.shade100,
                               alignment: AlignmentGeometry.centerLeft,
-                              // margin: const EdgeInsets.only(left: 10),
                               child: buildFace(
                                 context,
                                 sheetIndex,
@@ -225,39 +189,20 @@ class PageFlipperState extends State<PageFlipper>
                               child: Transform(
                                 alignment: Alignment.center,
                                 // origin: Offset(16, 0),
-                                // origin: Offset(widget.width / 31.25, 0), // 500sw
+                                origin: Offset(
+                                  -7, //widget.width / 31.25,
+                                  0,
+                                ), // 500sw
                                 // origin: Offset(widget.width / 28, 0), // 670sw
-                                origin: Offset(-12, 0), // 775sw
+                                // origin: Offset(-12, 0), // 775sw
                                 // origin: Offset(-38, 0), // 877sw
-                                transform: Matrix4.identity()
-                                  // ..rotateY(math.pi)
-                                  ..rotateY(math.pi),
-                                child: Container(
-                                  // height: widget.height,
-                                  // width: widget.width,
-                                  // color: Colors.blue.shade100,
-                                  child: buildFace(
-                                    context,
-                                    sheetIndex,
-                                    front: false,
-                                    isVisible: false, // isFlipping,
-                                  ),
+                                transform: Matrix4.identity()..rotateY(math.pi),
+                                child: buildFace(
+                                  context,
+                                  sheetIndex,
+                                  front: false,
+                                  isVisible: false,
                                 ),
-                                // Page 2 to 1 on prev dont work right
-                                // child:
-                                //     // 1 + 1 == 2
-                                //     isFlipping || currentPage == 0
-                                //     ? Container(
-                                //         margin: const EdgeInsets.only(left: 50),
-                                //         child: buildFace(
-                                //           context,
-                                //           sheetIndex,
-                                //           front: false,
-                                //           isVisible: !isFlipping,
-                                //         ),
-                                //       )
-                                //     : const SizedBox(),
-                                // child: const SizedBox(),
                               ),
                             ),
                           Positioned.fill(
@@ -292,7 +237,58 @@ class PageFlipperState extends State<PageFlipper>
             ),
           ),
 
-          // Forward hit zone - the full 485px flip area. Forward only.
+          // Static left page; shows when not on the first page
+          if (currentPage > 0) ...[
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: flipAreaWidth,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Center(
+                      child: Transform(
+                        alignment: Alignment.centerLeft,
+                        origin: Offset(-3, 0),
+                        transform: Matrix4.identity()..rotateY(math.pi),
+                        // child: Container(
+                        //   width: 330,
+                        //   height: 447.5,
+                        //   margin: const EdgeInsets.only(bottom: 10),
+                        //   // color: Colors.blue.shade100,
+                        //   decoration: BoxDecoration(
+                        //     gradient: LinearGradient(
+                        //       colors: [
+                        //         Colors.purple.shade100,
+                        //         Colors.blue.shade100,
+                        //         Colors.green.shade100,
+                        //         Colors.yellow.shade100,
+                        //         Colors.orange.shade100,
+                        //         Colors.red.shade100,
+                        //       ],
+                        //     ),
+                        //   ),
+                        // ),
+                        child: AnimatedOpacity(
+                          opacity: controller.isAnimating ? 0 : 1,
+                          duration: Duration(milliseconds: 300),
+                          child: buildFace(
+                            context,
+                            currentPage - 1,
+                            front: false,
+                            isVisible: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // Right hit zone; moves forward only.
           Positioned(
             left: widget.spineOffset,
             top: 0,
@@ -306,7 +302,7 @@ class PageFlipperState extends State<PageFlipper>
             ),
           ),
 
-          // Backward hit zone - the 70px sliver left of the spine. Backward only.
+          // Left hit zone; moves backward only.
           Positioned(
             left: 0,
             top: 0,

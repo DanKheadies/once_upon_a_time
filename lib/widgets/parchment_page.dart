@@ -58,6 +58,7 @@ class ParchmentPage extends StatelessWidget {
   /// the leftmost ~15% of the page.
   final double fadeStart;
   final double fadeEnd;
+  final bool? isFlipped;
 
   const ParchmentPage({
     super.key,
@@ -86,6 +87,7 @@ class ParchmentPage extends StatelessWidget {
     this.cellVariation = 0.05, // 0.125, // 0.25,
     this.fadeStart = 0.0,
     this.fadeEnd = 0.2, // 0.15,
+    this.isFlipped = false,
   });
 
   @override
@@ -121,7 +123,9 @@ class ParchmentPage extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [colorA.withAlpha(0), colorA.withAlpha(42)],
+                colors: isFlipped!
+                    ? [colorA.withAlpha(42), colorA.withAlpha(0)]
+                    : [colorA.withAlpha(0), colorA.withAlpha(42)],
               ),
             ),
             width: width,
