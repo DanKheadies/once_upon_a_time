@@ -12,17 +12,15 @@ Future<ui.FragmentShader> loadParchmentPageShader() async {
   return program.fragmentShader();
 }
 
-/// A single parchment page background, rendered via the shader, with your
-/// page content laid on top. One shader INSTANCE can be reused across all
-/// pages - each page just gets a different `seed` so the mesh-gradient
+/// A single parchment page background, rendered via the shader, with page
+/// content laid on top. One shader INSTANCE can be reused across all pages,
+/// i.e. each page just gets a different `seed` so the mesh-gradient
 /// blob positions and grain differ per page without needing to reload or
 /// recompile anything.
 class ParchmentPage extends StatelessWidget {
   final BookLayout layout;
   final double width;
   final double height;
-  final double arwidth;
-  final double arheight;
   final int seed;
   final Widget child;
   final ui.FragmentShader shader;
@@ -32,34 +30,17 @@ class ParchmentPage extends StatelessWidget {
   final Color colorC;
   final Color colorD;
 
-  /// Grid resolution for the pixel-art mode - defaults match your 15x19
-  /// reference art. Set pixelate to false to fall back to a smooth blend
-  /// (useful for comparing the two side by side while you decide).
   final double gridCols;
   final double gridRows;
   final double levels;
   final bool pixelate;
 
-  /// Hue-lock: measured from your parchment.png reference, which sits at
-  /// roughly hue 42 (warm tan/khaki), ~15-20% saturation. You can now pick
-  /// any 4 blob colors you like for interesting light/shadow variation -
-  /// these three params guarantee the OUTPUT stays a single consistent
-  /// hue family regardless.
   final double targetHue;
   final double hueLock;
   final double maxSaturation;
 
-  /// How strongly each grid cell's brightness is randomly jittered.
-  /// 0.2-0.35 is a good starting range - high enough to kill the "big
-  /// light spot / big dark spot" look, not so high it looks like noise.
   final double cellVariation;
 
-  /// Left-edge transparency fade, in uv space (0.0 = left edge of THIS
-  /// widget, 1.0 = right edge). fadeStart is where alpha hits 0,
-  /// fadeEnd is where it reaches full opacity. If this ParchmentPage is
-  /// positioned starting right at the spine (as in SpinePageFlipper),
-  /// these can stay small fractions - e.g. fadeEnd: 0.15 fades out over
-  /// the leftmost ~15% of the page.
   final double fadeStart;
   final double fadeEnd;
 
@@ -67,22 +48,14 @@ class ParchmentPage extends StatelessWidget {
     super.key,
     required this.width,
     required this.height,
-    required this.arwidth,
-    required this.arheight,
     required this.layout,
     required this.seed,
     required this.child,
     required this.shader,
-    // OG
     this.colorA = const Color(0xFFF3E3C3),
     this.colorB = const Color(0xFFE9D5A6),
     this.colorC = const Color(0xFFD9BE8C),
     this.colorD = const Color(0xFFB89B6B),
-    // Custom
-    // this.colorA = const Color(0xFFcfc9b3), //F3E3C3),
-    // this.colorB = const Color(0xFFE9D5A6),
-    // this.colorC = const Color(0xFFc5bfa3), //D9BE8C),
-    // this.colorD = const Color(0xFFbfba9c), //B89B6B),
     this.gridCols = 15,
     this.gridRows = 19,
     this.levels = 20,
@@ -98,7 +71,7 @@ class ParchmentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: EdgeInsets.only(bottom: layout.pageHeight / 65),
       width: width,
       height: height,
       child: Stack(
@@ -130,32 +103,19 @@ class ParchmentPage extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [colorA.withAlpha(0), colorA.withAlpha(42)],
                 // colors: [Colors.red.withAlpha(255), colorA.withAlpha(42)],
-                // colors: arwidth / arheight > 0.83
-                //     ? [
-                //         Colors.blue.withAlpha(255),
-                //         colorA.withAlpha(42),
-                //       ] // use height
-                //     : [
-                //         Colors.red.withAlpha(255),
-                //         colorA.withAlpha(42),
-                //       ], // use width
-                // colors: 1 + 1 == 22
-                //     ? [colorA.withAlpha(0), colorA.withAlpha(42)]
-                //     : arwidth / arheight > 0.83
-                //     ? [
-                //         Colors.blue.withAlpha(255),
-                //         colorA.withAlpha(42),
-                //       ] // use height
-                //     : [
-                //         Colors.red.withAlpha(255),
-                //         colorA.withAlpha(42),
-                //       ], // use width
+                // colors: [Colors.red.withAlpha(255), Colors.blue.withAlpha(255)],
               ),
             ),
             width: width,
             height: height,
           ),
-          Padding(padding: const EdgeInsets.all(24), child: child),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: layout.pageWidth / 9,
+              vertical: layout.pageHeight / 18,
+            ),
+            child: child,
+          ),
         ],
       ),
     );

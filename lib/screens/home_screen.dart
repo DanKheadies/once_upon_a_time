@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
@@ -11,42 +13,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 // TODO:
-// 1) Auto-scroll should be on a timer, i.e. after X seconds, start scrolling,
-// and the distance is should cover is related to the number of characters in
-// the prompt, e.g. string contains 120 characters, which in general is 500.
-// - Not full-proof; should consider a better way to know "how much is left to
-//   show" rather than guessing
-// 2) On text complete, we show two buttons: Guess || Go On..
-// 3) On a tap, we load all of the text, stop the timer(s) (e.g. scroll), and
-// present the buttons.
-// 4) Continue to keep old text and guesses "in-view," i.e. if we have a 120
-// character prompt with no guesses, then both the text and "no guess" are shown
-// while the prompt continues to load more (and scroll down while it loads).
-// - Players should be able to scroll back up to review context (with a "jump to
-//   the bottom" button).
-// - Alternative: there could be arrows to denote old text and guesses, which
-//   could have a "page flip" to the other prompts
-// 5) Add a menu button that contains:
+// 1) Add a menu button that contains:
 // - Give new story
 // - Stumped, give answer
 // - Help / Contact
 // - Secret Admin login
 // - Restart story (?)
-// 6) Have the first page show the "Once upon a time..." tagline with a fancy "O"
-// 7) On a correct solve, the rest of the story should be told with some victory
+// 2) On a correct solve, the rest of the story should be told with some victory
 // fanfare in the background. Player can keep reading or go on to the next story.
-// 8) At the end of the chapters, give the Player one last chance to solve or
+// 3) At the end of the chapters, give the Player one last chance to solve or
 // give them the answer.
 
-// Thoughts:
-// It feels like the book visual is the play. I should have a book "appear" and
-// open up. Then the story starts flowing. Having
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  bool canProceed = false;
   bool hasPrev = false;
   bool isOpened = false;
   bool isVideoInitialized = false;
   double raggedness = 0;
   int chapterIndex = 0;
+  int checkpointIndex = 0;
   int parchmentSeed = 0;
   List<String> story = [];
   String exampleText =
@@ -62,17 +47,57 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final GlobalKey<PageFlipperState> storybookKey = GlobalKey();
 
   late final AnimationController entrance;
+  late final AnimatedTextController textController;
+  late ScrollController scrollController;
+  late Timer scrollTimer;
 
   @override
   void initState() {
     super.initState();
 
+    loadShader();
+
     entrance = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..forward();
-    loadShader();
+    scrollController = ScrollController();
+    textController = AnimatedTextController();
+
+    scrollTimer = Timer(Duration.zero, () {});
+
     story = Story.storyExample1.chapters;
+  }
+
+  void initializeScrollTimer() {
+    // print('initializeScrollTimer');
+    setState(() {
+      scrollTimer = Timer.periodic(Duration(milliseconds: 300), (tick) {
+        // print('tick: ${tick.tick}');
+        if (scrollController.hasClients) {
+          // print('hasClients');
+          final maxScroll = scrollController.position.maxScrollExtent;
+          // print('animating to: $maxScroll');
+          if (chapterIndex == checkpointIndex) {
+            // print("SCROLL");
+            scrollController.animateTo(
+              maxScroll,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.linear,
+            );
+          }
+        }
+        if (canProceed) {
+          print('can proceed, so murder');
+          scrollTimer.cancel();
+        }
+        // TODO: remove this after debugging
+        // if (tick.tick > 30) {
+        //   print('30 ticks: cancel for safety');
+        //   scrollTimer.cancel();
+        // }
+      });
+    });
   }
 
   Future<void> loadShader() async {
@@ -95,17 +120,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // curlShader?.dispose();
     entrance.dispose();
     pageShader.dispose();
+    scrollController.dispose();
+    scrollTimer.cancel();
+    textController.pause();
+    textController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
+    // Size size = MediaQuery.of(context).size;
 
     return Scaffold(
       appBar: AppBar(
         title: Texxt(
-          'Once Upon a Time (${size.width}, ${size.height})',
+          // 'Once Upon a Time (${size.width}, ${size.height})',
+          'Once Upon a Time',
           isOlde: true,
           useDark: false,
         ),
@@ -189,127 +219,139 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         setState(() {
                           isOpened = true;
                         });
+                        initializeScrollTimer();
                       },
                     ),
                   ),
                 ),
-                // TODO: come back to this and see how best to handle
-                // if (isOpened && hasShader && height > 400) ...[
                 if (isOpened && hasShader) ...[
-                  GestureDetector(
-                    onLongPress: () {
-                      print('($width, $height)');
-                      print('(${layout.bookWidth}, ${layout.bookWidth})');
-                      print('(${layout.pageWidth}, ${layout.pageHeight})');
+                  PageFlipper(
+                    key: storybookKey,
+                    canFlip: canProceed,
+                    width: width,
+                    height: height,
+                    layout: layout,
+                    spineOffset: layout.spineOffset,
+                    pageCount: story.length,
+                    pageBuilder:
+                        (context, index, isVisible, goingBack, showText) =>
+                            ParchmentPage(
+                              width: layout.pageWidth,
+                              height: layout.pageHeight,
+                              seed: index,
+                              shader: pageShader,
+                              fadeStart: 0.0,
+                              fadeEnd: layout.fadeEnd,
+                              layout: layout,
+                              child: isVisible && showText
+                                  ? buildChapterText(layout, showText, index)
+                                  : const SizedBox(),
+                            ),
+                    onPageChanged: (value) {
+                      // print('onPageChanged: Page ${value + 1}');
+                      setState(() {
+                        // scrollController.jumpTo(0);
+                        scrollController.dispose();
+                        scrollController = ScrollController();
 
-                      // Preface: we want to look at "screenSafe" sizes to work
-                      // around nav bars, status bars, etc. We CAN use screen
-                      // sizes, e.g. MediaQuery.of(context).size.height, but we
-                      // are getting LayBuilder box constraints to determine the
-                      // screenSafeHeight and screenSafeWidth.
-                      // Aspect Ratio of to maintain is ~5:6 or 0.8371:1, e.g.
-                      // 560ssw x 669ssh (560sw x 725sh). This is the point
-                      // where it shrinks from width changes to height changes
-                      // and vice versa.
+                        canProceed = value < checkpointIndex;
+                        chapterIndex = value;
+                        checkpointIndex = value > checkpointIndex
+                            ? value
+                            : checkpointIndex;
 
-                      // Goal: find a formula (or two) that handles dealing with
-                      // the specific aspect ratio above while supplying values
-                      // for the following variables:
-                      // screenSafeWidth
-                      // screenSafeHeight
-                      // pageWidth
-                      // pageHeight,
-                      // spineOffset
-                      // flipperOffset
-                      // fadeEnd
+                        textController.play();
+                      });
 
-                      // For when screenSafeHeight == 941 (sh == 997)
-                      // screenSafeWidth x screenSafeHeight => pageWidth x pageHeight (spineOffset) [flipperOffset] {fadeEnd} "prevWidth"
-                      // 390ssw x 788ssh => 250pw x 345ph (58so) [-12.5off] {0.333fe} "315"
-                      // 500ssw x 941ssh => 330pw x 447.5ph (76so) [-15off] {0.275fe} "415"
-                      // 670ssw x 941ssh => 445pw x 610ph (103so) [-25off] {0.225fe} "570"
-                      // 778ssw x 941ssh => 525pw x 710ph (120so) [-26.5off] {0.2fe} "660"
-                      // > maintains above, i.e. triggers the aspect ratio to
-                      // hold after this point, and we maintain. BUT if screen
-                      // height goes down, we need below to recalculate and
-                      // change our variables based on the new height & width.
-
-                      // For when screenSafeWidth == 560 (sw == 560)
-                      // screenSafeWidth => pageWidth x pageHeight (spineOffset) [flipperOffset] {fadeEnd} "prevWidth"
-                      // 500ssw x 941ssh => 330pw x 447.5ph (76so) [-15off] {0.275fe} "415"
-                      // 560ssw x 941ssh => 375pw x 500ph (86so) [-17.5off] {0.275fe} "470"
-                      // 560ssw x 800ssh => 375pw x 500ph (86so) [-17.5off] {0.275fe} "470"
-                      // 560ssw x 674ssh => 375pw x 500ph (85so) [-17.5off] {0.275fe} "470"
-                      // This is no longer holding those values because the aspect
-                      // ratio.
-                      // 560ssw x 550ssh => 310pw x 410ph (70so) [-15.5off] [0.225fe] "387.5"
-                      // 560ssw x 424ssh => 237.5pw x 315ph (53so) [-10off] [0.2fe] "297.5"
-                      // 560ssw x 244ssh => 137.5pw x 185ph (31so) [-6.5off] [0.333fe] "170"
-
-                      // Consideration: when the aspect ratio is triggered and
-                      // more width is added, the calculations stay the same;
-                      // however, if the height changes, we need to recalculate.
-
-                      // Does it look like this?
-                      // screenSafeWidth / screenSafeHeight > 0.83 ?
-                      //    heightForumula(height, width) :
-                      //    widthForumula(height, width),
+                      initializeScrollTimer();
                     },
-                    child: PageFlipper(
-                      // widget.width > 778
-                      //     ? 778 - widget.spineOffset
-                      //     : widget.width - widget.spineOffset,
-                      // widget.height < 674
-                      //     ? 674 - widget.spineOffset (70)
-                      //     : widget.width (560) - widget.spineOffset (70)
-                      // 5:6 || 0.8371:1 * w/h
-                      // 0.8371/1 == 560/674
-                      // 460.405
-                      key: storybookKey,
-                      width: width,
-                      height: height,
-                      layout: layout,
-                      spineOffset: layout.spineOffset,
-                      pageCount: story.length,
-                      pageBuilder: (context, index, isVisible, showBack) =>
-                          ParchmentPage(
-                            width: layout.pageWidth,
-                            height: layout.pageHeight,
-                            arwidth: width,
-                            arheight: height,
-                            seed: index,
-                            shader: pageShader,
-                            fadeStart: 0.0,
-                            // DACO
-                            // TODO: smaller screen size, i.e. mobile @ 390,
-                            // are better with bigger values, e.g. 0.333.
-                            fadeEnd: layout.fadeEnd,
-                            layout: layout,
-                            child: isVisible
-                                ? Text(
-                                    '${index + 1} $exampleText',
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.inverseSurface,
-                                      fontSize: layout.fontSize,
-                                    ),
-                                  )
-                                : const SizedBox(),
-                          ),
-                      onPageChanged: (value) {
-                        print('onPageChanged: Page ${value + 1}');
-                        setState(() {
-                          chapterIndex = value;
-                        });
-                      },
-                    ),
+                    onPageTap: () {
+                      // print('onPageTap!');
+                      setState(() {
+                        textController.pause();
+                        canProceed = true;
+                      });
+                    },
                   ),
                 ],
               ],
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget buildChapterText(BookLayout layout, bool showText, int index) {
+    // print('buildChapterText');
+    // print('showBack: $showBack');
+    String chapterText = story[index]
+        .replaceAll('. ', '.\n\n')
+        .replaceAll('! ', '!\n\n')
+        .replaceAll('? ', '?\n\n');
+
+    return SingleChildScrollView(
+      controller: scrollController,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (index == 0) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'O',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.inverseSurface,
+                    fontSize: layout.fontSize * 3,
+                    fontFamily: 'HoldMoney',
+                    height: 1,
+                  ),
+                ),
+                Texxt(
+                  ' nce upon a time..',
+                  size: layout.fontSize,
+                  useDark: true,
+                ),
+              ],
+            ),
+          ],
+          index < checkpointIndex
+              ? Texxt(chapterText, size: layout.fontSize, useDark: true)
+              : AnimatedTextKit(
+                  controller: textController,
+                  // onNext: (index, last) {
+                  //   print('onNext index: $index');
+                  //   print('onNext last: $last');
+                  // }, // (RIP) overridden
+                  // onNextBeforePause: (index, last) {
+                  //   print('onNextBeforePause index: $index');
+                  //   print('onNextBeforePause last: $last');
+                  // }, // (RIP) overridden
+                  isRepeatingAnimation: false,
+                  // displayFullTextOnTap: true, // (RIP) overridden
+                  pause: const Duration(milliseconds: 1000),
+                  // stopPauseOnTap: true, // (RIP) overridden
+                  onTap: () {}, // (RIP) overridden
+                  onFinished: () {
+                    print('onFinished');
+                    setState(() {
+                      canProceed = true;
+                    });
+                  },
+                  animatedTexts: [
+                    TyperAnimatedText(
+                      // '${index + 1} $exampleText $exampleText',
+                      chapterText,
+                      textStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.inverseSurface,
+                        fontSize: layout.fontSize,
+                      ),
+                      speed: const Duration(milliseconds: 30),
+                    ),
+                  ],
+                ),
+        ],
       ),
     );
   }
@@ -404,16 +446,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadiusGeometry.circular(100),
                   ),
-                  onPressed: chapterIndex < 1
+                  onPressed: chapterIndex < 1 || !canProceed
                       ? null
                       : () {
-                          print('prev chp');
+                          // print('prev chp');
                           setState(() {
                             chapterIndex -= 1;
                           });
                           storybookKey.currentState?.prevPage();
                         },
-                  child: Icon(Icons.arrow_back),
+                  child: Icon(
+                    Icons.arrow_back,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
+                  ),
                 ),
           // TODO: delay showing solve until chapter 2 (?)
           FloatingActionButton(
@@ -421,12 +468,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadiusGeometry.circular(100),
             ),
-            onPressed: () {
-              print('solve');
-            },
-            child: Icon(Icons.auto_fix_high),
+            onPressed: !canProceed
+                ? null
+                : () {
+                    print('TODO: solve');
+                  },
+            child: Icon(
+              Icons.auto_fix_high,
+              color: Theme.of(
+                context,
+              ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
+            ),
           ),
-          // TODO: delay next page until all text is shown (?)
           chapterIndex + 1 >= story.length
               ? emptyFlaction()
               : FloatingActionButton(
@@ -434,16 +487,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadiusGeometry.circular(100),
                   ),
-                  onPressed: () {
-                    print('go on');
-                    if (chapterIndex + 1 < story.length) {
-                      setState(() {
-                        chapterIndex += 1;
-                      });
-                      storybookKey.currentState?.nextPage();
-                    }
-                  },
-                  child: Icon(Icons.auto_stories),
+                  onPressed: !canProceed
+                      ? null
+                      : () {
+                          // print('go on');
+                          if (chapterIndex + 1 < story.length) {
+                            setState(() {
+                              scrollController.jumpTo(0);
+                              chapterIndex += 1;
+                            });
+                            storybookKey.currentState?.nextPage();
+                          }
+                        },
+                  child: Icon(
+                    Icons.auto_stories,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
+                  ),
                 ),
         ],
       ),
