@@ -15,26 +15,6 @@ final GoRouter goRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/book',
-      name: 'book',
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const BookDemoPage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-            FadeTransition(opacity: animation, child: child),
-      ),
-    ),
-    GoRoute(
-      path: '/curling',
-      name: 'curling',
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const CurlShaderTestScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-            FadeTransition(opacity: animation, child: child),
-      ),
-    ),
-    GoRoute(
       path: '/home',
       name: 'home',
       pageBuilder: (context, state) => CustomTransitionPage(

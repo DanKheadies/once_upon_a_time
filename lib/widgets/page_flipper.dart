@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 // import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:once_upon_a_time/barrel.dart';
 // import 'package:once_upon_a_time/barrel.dart';
 
 /// ============================================================================
@@ -32,6 +33,7 @@ import 'package:flutter/material.dart';
 /// visible of it anyway. It's used purely as a gesture hit zone.
 /// ============================================================================
 class PageFlipper extends StatefulWidget {
+  final BookLayout layout;
   final double height;
   final double spineOffset;
   final double width;
@@ -63,6 +65,7 @@ class PageFlipper extends StatefulWidget {
     super.key,
     // required this.curlShader,
     required this.height,
+    required this.layout,
     required this.pageBuilder,
     required this.pageCount,
     // required this.pageImageCache,
@@ -167,6 +170,7 @@ class PageFlipperState extends State<PageFlipper>
                     return Transform(
                       // The spine never moves - both directions pivot here.
                       alignment: Alignment.centerLeft,
+                      origin: Offset(widget.layout.flipperOffset, 0),
                       transform: perspectiveMatrix()..rotateY(angle),
                       child: Stack(
                         children: [
@@ -176,7 +180,7 @@ class PageFlipperState extends State<PageFlipper>
                               child: buildFace(
                                 context,
                                 sheetIndex,
-                                front: true,
+                                front: false,
                                 isVisible: !isFlipping,
                               ),
                             )
@@ -188,14 +192,6 @@ class PageFlipperState extends State<PageFlipper>
                             Center(
                               child: Transform(
                                 alignment: Alignment.center,
-                                // origin: Offset(16, 0),
-                                origin: Offset(
-                                  -7, //widget.width / 31.25,
-                                  0,
-                                ), // 500sw
-                                // origin: Offset(widget.width / 28, 0), // 670sw
-                                // origin: Offset(-12, 0), // 775sw
-                                // origin: Offset(-38, 0), // 877sw
                                 transform: Matrix4.identity()..rotateY(math.pi),
                                 child: buildFace(
                                   context,
@@ -217,7 +213,7 @@ class PageFlipperState extends State<PageFlipper>
                                     begin: Alignment.centerRight,
                                     end: Alignment.centerLeft,
                                     colors: [
-                                      Colors.black.withValues(alpha: 0.0),
+                                      Colors.black.withValues(alpha: 0),
                                       Colors.black.withValues(
                                         alpha: 0.22 * liftShade,
                                       ),
@@ -243,41 +239,63 @@ class PageFlipperState extends State<PageFlipper>
               left: 0,
               top: 0,
               bottom: 0,
-              width: flipAreaWidth,
+              // Note: this is more related to when the aspect ratio locks in
+              //
+              // width: widget.width > 778
+              //     ? 778 - widget.spineOffset
+              //     : flipAreaWidth,
+              // width: currentWidth > (width aspect ratio is max'd at)
+              //     ? (width aspect ratio is max'd at) - widget.spineOffset
+              //     : flipAreaWidth,
+              // So if the aspect ratio is width / height > 0.889, then use
+              // height. Otherwise, use width. (Might be 0.8)
+              // But also, once we height the "max" threshold, we need to
+              // maintain that. It's probably related to the aspect ratio and
+              // the main measurement (or the other).
+              // 1) do we focus on width or height
+              // 2) do we lock out at the "max"
+              // Currently, width (500ssw) / height (941ssh) = 0.531ar, so we'll
+              // use width until we lock out.
+              // Now width (670ssw) / height (941ssh) = 0.712ar, so keep to width.
+              // Now width (778ssw) / height (941ssh) = 0.827ar, so switch.
+              // width (500ssw) / height (750ssh) = 0.667ar
+              // width (575ssw) / height (750ssh) = 0.767ar
+              // width (625ssw) / height (750ssh) = 0.833ar, switch
+              // width (500ssw) / height (650ssh) = 0.769ar
+              // width (525ssw) / height (650ssh) = 0.808ar
+              // width (545ssw) / height (650ssh) = 0.838ar, switch
+              // Hmmm.. So 0.83 aspect ratio seems to be a sweet spot..
+              // width: (screenSafeWidth / screenSafeHeight >= 0.83 ?
+              //    heightForumula(height, width) :
+              //    widthForumula(height, width)) > maxHeight(height, width) ?
+              //        maxHeight(height, width) - widget.spineOffset :
+              //        flipAreaWidth,
+              // width: widget.width / widget.height >= 0.889
+              //     ? 0
+              //     // ? 595 - widget.spineOffset
+              //     : flipAreaWidth,
+              // width: widget.height > 560
+              //     ? 560 - widget.spineOffset
+              //     : flipAreaWidth,
+              // width: 500,
+              width: widget.layout.prevWidth,
+              // width: screenSafeWidth > 778 ?
+              //      ? 778 - derp
               child: Stack(
                 children: [
                   Positioned.fill(
                     child: Center(
                       child: Transform(
                         alignment: Alignment.centerLeft,
-                        origin: Offset(-3, 0),
                         transform: Matrix4.identity()..rotateY(math.pi),
-                        // child: Container(
-                        //   width: 330,
-                        //   height: 447.5,
-                        //   margin: const EdgeInsets.only(bottom: 10),
-                        //   // color: Colors.blue.shade100,
-                        //   decoration: BoxDecoration(
-                        //     gradient: LinearGradient(
-                        //       colors: [
-                        //         Colors.purple.shade100,
-                        //         Colors.blue.shade100,
-                        //         Colors.green.shade100,
-                        //         Colors.yellow.shade100,
-                        //         Colors.orange.shade100,
-                        //         Colors.red.shade100,
-                        //       ],
-                        //     ),
-                        //   ),
-                        // ),
                         child: AnimatedOpacity(
                           opacity: controller.isAnimating ? 0 : 1,
                           duration: Duration(milliseconds: 300),
                           child: buildFace(
                             context,
                             currentPage - 1,
-                            front: false,
-                            isVisible: true,
+                            front: true,
+                            isVisible: false,
                           ),
                         ),
                       ),

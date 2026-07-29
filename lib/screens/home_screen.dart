@@ -1,31 +1,7 @@
-// import 'dart:math';
-
-// import 'package:animated_text_kit/animated_text_kit.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:once_upon_a_time/barrel.dart';
-
-// Future<ui.FragmentShader> loadPageShader() async {
-//   try {
-//     final program = await ui.FragmentProgram.fromAsset(
-//       'assets/shaders/page_curl.frag',
-//     );
-//     print('shader OK');
-//     return program.fragmentShader();
-//   } catch (e) {
-//     print('error: $e');
-//     throw Exception();
-//   }
-// }
-// Future<ui.FragmentShader> loadParchmentPageShader() async {
-//   final program = await ui.FragmentProgram.fromAsset(
-//     'assets/shaders/parchment_page.frag',
-//   );
-//   print('derp');
-//   return program.fragmentShader();
-// }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -69,7 +45,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool hasPrev = false;
   bool isOpened = false;
   bool isVideoInitialized = false;
-  // bool showAll = false;
   double raggedness = 0;
   int chapterIndex = 0;
   int parchmentSeed = 0;
@@ -84,7 +59,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // PageImageCache? _imageCache;
   // ui.FragmentShader? curlShader;
 
-  // final GlobalKey<BookOpenerState> openerKey = GlobalKey();
   final GlobalKey<PageFlipperState> storybookKey = GlobalKey();
 
   late final AnimationController entrance;
@@ -126,192 +100,216 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
-        title: Texxt('Once Upon a Time', isOlde: true, useDark: false),
+        title: Texxt(
+          'Once Upon a Time (${size.width}, ${size.height})',
+          isOlde: true,
+          useDark: false,
+        ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.navigate_next),
-            onPressed: () {
-              print('book');
-              context.goNamed('curling');
-            },
-          ),
-          // videoController.value.isInitialized
-          //     ? IconButton(
-          //         icon: Icon(Icons.pause),
-          //         onPressed: () {
-          //           setState(() {
-          //             videoController.pause();
-          //           });
-          //         },
-          //       )
-          //     : IconButton(
-          //         icon: Icon(Icons.play_arrow),
-          //         onPressed: () {
-          //           setState(() {
-          //             videoController.play();
-          //           });
-          //         },
-          //       ),
+          // IconButton(icon: Icon(Icons.info), onPressed: () {}),
         ],
       ),
-      floatingActionButton: buildStorybookActions(),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          double height = constraints.maxHeight;
-          double width = constraints.maxWidth;
+      floatingActionButton: AnimatedOpacity(
+        opacity: isOpened ? 1 : 0,
+        duration: Duration(milliseconds: 500),
+        child: buildStorybookActions(),
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double height = constraints.maxHeight;
+            double width = constraints.maxWidth;
+            BookLayout layout = computeBookLayout(
+              screenSafeWidth: width,
+              screenSafeHeight: height,
+            );
 
-          return Stack(
-            children: [
-              // PageTextureCapture(
-              //   pageCount: story.length, // _pageCount,
-              //   pageWidth: width, // _flipAreaWidth,
-              //   pageHeight: height, // _pageHeight,
-              //   // pageBuilder: _pageContent,
-              //   pageBuilder: (context, index) => ParchmentPagePlaceholder(
-              //     height: 500, // height
-              //     width: width,
-              //     seed: index,
-              //     text: '${index + 1} $exampleText',
-              //   ),
-              //   onReady: (cache) {
-              //     debugPrint('onReady fired, cache.isReady = ${cache.isReady}');
-              //     setState(
-              //       () => _imageCache = cache,
-              //     ); // <- the setState was the missing piece
-              //   },
-              // ),
-              BackgroundVideo(
-                isInitialized: () {
-                  setState(() {
-                    isVideoInitialized = true;
-                  });
-                },
-              ),
-              ...buildBackgroundVeil(
-                context,
-                Theme.of(context).colorScheme.inverseSurface.withAlpha(100),
-                height,
-                width,
-              ),
-              Center(
-                child: AnimatedBuilder(
-                  animation: entrance,
-                  builder: (context, child) {
-                    final slide = Curves.easeOutBack.transform(entrance.value);
-                    return Transform.translate(
-                      offset: Offset(0, (1 - slide) * -300),
-                      child: child,
-                    );
+            return Stack(
+              children: [
+                // PageTextureCapture(
+                //   pageCount: story.length, // _pageCount,
+                //   pageWidth: width, // _flipAreaWidth,
+                //   pageHeight: height, // _pageHeight,
+                //   // pageBuilder: _pageContent,
+                //   pageBuilder: (context, index) => ParchmentPagePlaceholder(
+                //     height: 500, // height
+                //     width: width,
+                //     seed: index,
+                //     text: '${index + 1} $exampleText',
+                //   ),
+                //   onReady: (cache) {
+                //     debugPrint('onReady fired, cache.isReady = ${cache.isReady}');
+                //     setState(
+                //       () => _imageCache = cache,
+                //     ); // <- the setState was the missing piece
+                //   },
+                // ),
+                BackgroundVideo(
+                  isInitialized: () {
+                    setState(() {
+                      isVideoInitialized = true;
+                    });
                   },
-                  child: Storybook(
-                    width: width,
-                    height: height,
-                    frontCover: Container(
-                      alignment: Alignment.centerLeft,
-                      margin: const EdgeInsets.only(right: 25),
-                      child: Image.asset(
-                        'assets/images/storybook-cover.png',
-                        scale: 0.1,
+                ),
+                ...buildBackgroundVeil(
+                  context,
+                  Theme.of(context).colorScheme.inverseSurface.withAlpha(100),
+                  height,
+                  width,
+                ),
+                Center(
+                  child: AnimatedBuilder(
+                    animation: entrance,
+                    builder: (context, child) {
+                      final slide = Curves.easeOutBack.transform(
+                        entrance.value,
+                      );
+                      return Transform.translate(
+                        offset: Offset(0, (1 - slide) * -300),
+                        child: child,
+                      );
+                    },
+                    child: Storybook(
+                      width: width,
+                      height: height,
+                      frontCover: Container(
+                        alignment: Alignment.centerLeft,
+                        margin: const EdgeInsets.only(right: 25),
+                        child: Image.asset(
+                          'assets/images/storybook-cover.png',
+                          scale: 0.1,
+                        ),
                       ),
+                      pages: const SizedBox(),
+                      onOpened: () {
+                        setState(() {
+                          isOpened = true;
+                        });
+                      },
                     ),
-                    pages: const SizedBox(),
-                    onOpened: () {
-                      setState(() {
-                        isOpened = true;
-                      });
-                    },
                   ),
                 ),
-              ),
+                // TODO: come back to this and see how best to handle
+                // if (isOpened && hasShader && height > 400) ...[
+                if (isOpened && hasShader) ...[
+                  GestureDetector(
+                    onLongPress: () {
+                      print('($width, $height)');
+                      print('(${layout.bookWidth}, ${layout.bookWidth})');
+                      print('(${layout.pageWidth}, ${layout.pageHeight})');
 
-              // TODO: come back to this and see how best to handle
-              // height > 400 && isOpened
-              //     ? buildStorybookContent(height, width)
-              //     : const SizedBox(),
-              if (isOpened && hasShader) ...[
-                // if (isOpened) ...[
-                GestureDetector(
-                  onLongPress: () {
-                    print('($width, $height)');
-                    // For when screenHeight (941) > screenWidth (see below)
-                    // screenWidth = pageHeight (spineOffset) | pageWidth
-                    // 500sw = 330pw x 447.5ph (75so)
-                    // // 500sw = 320pw x 440ph (75so)
-                    // 670sw = 425pw x 600ph (105so)
-                    // 775sw = 500pw x 700ph (120so)
-                    // > maintains above
-                    // Note: screenWidth >= screenHeight after this point, and
-                    // we maintain. BUT if screen height goes down, we need below
-                  },
-                  child: PageFlipper(
-                    key: storybookKey,
-                    width: width,
-                    height: height,
-                    // spineOffset: height / 10 > 55 ? 55 : height / 10, // 70,
-                    // spineOffset: height / 20 > 70 ? 70 : height / 10, // 70,
-                    spineOffset: 75,
-                    pageCount: story.length,
-                    pageBuilder: (context, index, isVisible, showBack) =>
-                        ParchmentPage(
-                          width: 330,
-                          height: 447.5,
-                          seed: index,
-                          shader: pageShader,
-                          fadeStart: 0.0,
-                          fadeEnd: 0.2,
-                          isFlipped: false,
-                          // child: Text('${index + 1} $exampleText'),
-                          child: isVisible
-                              ? Texxt('${index + 1} $exampleText')
-                              // ? const SizedBox()
-                              : const SizedBox(),
-                        ),
-                    // Container(
-                    //   width: 330,
-                    //   height: 447.5,
-                    //   margin: const EdgeInsets.only(bottom: 10),
-                    //   color: Colors.red.shade100,
-                    // ),
-                    pageBackBuilder: (context, index, isVisible, showBack) =>
-                        // Container(
-                        //   width: 330,
-                        //   height: 447.5,
-                        //   margin: const EdgeInsets.only(bottom: 10),
-                        //   // color: Colors.red.shade100,
-                        //   decoration: BoxDecoration(
-                        //     gradient: LinearGradient(
-                        //       colors: [
-                        //         Colors.blue.shade100,
-                        //         Colors.red.shade100,
-                        //       ],
-                        //     ),
-                        //   ),
-                        // ),
-                        ParchmentPage(
-                          width: 330,
-                          height: 447.5,
-                          seed: index,
-                          shader: pageShader,
-                          fadeStart: 1,
-                          fadeEnd: 0.8,
-                          isFlipped: true,
-                          child: const SizedBox(),
-                        ),
-                    onPageChanged: (value) {
-                      // The new index being shown, i.e. Page {$value + 1}
-                      print('onPageChanged: Page ${value + 1}');
-                      setState(() {
-                        chapterIndex = value;
-                      });
+                      // Preface: we want to look at "screenSafe" sizes to work
+                      // around nav bars, status bars, etc. We CAN use screen
+                      // sizes, e.g. MediaQuery.of(context).size.height, but we
+                      // are getting LayBuilder box constraints to determine the
+                      // screenSafeHeight and screenSafeWidth.
+                      // Aspect Ratio of to maintain is ~5:6 or 0.8371:1, e.g.
+                      // 560ssw x 669ssh (560sw x 725sh). This is the point
+                      // where it shrinks from width changes to height changes
+                      // and vice versa.
+
+                      // Goal: find a formula (or two) that handles dealing with
+                      // the specific aspect ratio above while supplying values
+                      // for the following variables:
+                      // screenSafeWidth
+                      // screenSafeHeight
+                      // pageWidth
+                      // pageHeight,
+                      // spineOffset
+                      // flipperOffset
+                      // fadeEnd
+
+                      // For when screenSafeHeight == 941 (sh == 997)
+                      // screenSafeWidth x screenSafeHeight => pageWidth x pageHeight (spineOffset) [flipperOffset] {fadeEnd} "prevWidth"
+                      // 390ssw x 788ssh => 250pw x 345ph (58so) [-12.5off] {0.333fe} "315"
+                      // 500ssw x 941ssh => 330pw x 447.5ph (76so) [-15off] {0.275fe} "415"
+                      // 670ssw x 941ssh => 445pw x 610ph (103so) [-25off] {0.225fe} "570"
+                      // 778ssw x 941ssh => 525pw x 710ph (120so) [-26.5off] {0.2fe} "660"
+                      // > maintains above, i.e. triggers the aspect ratio to
+                      // hold after this point, and we maintain. BUT if screen
+                      // height goes down, we need below to recalculate and
+                      // change our variables based on the new height & width.
+
+                      // For when screenSafeWidth == 560 (sw == 560)
+                      // screenSafeWidth => pageWidth x pageHeight (spineOffset) [flipperOffset] {fadeEnd} "prevWidth"
+                      // 500ssw x 941ssh => 330pw x 447.5ph (76so) [-15off] {0.275fe} "415"
+                      // 560ssw x 941ssh => 375pw x 500ph (86so) [-17.5off] {0.275fe} "470"
+                      // 560ssw x 800ssh => 375pw x 500ph (86so) [-17.5off] {0.275fe} "470"
+                      // 560ssw x 674ssh => 375pw x 500ph (85so) [-17.5off] {0.275fe} "470"
+                      // This is no longer holding those values because the aspect
+                      // ratio.
+                      // 560ssw x 550ssh => 310pw x 410ph (70so) [-15.5off] [0.225fe] "387.5"
+                      // 560ssw x 424ssh => 237.5pw x 315ph (53so) [-10off] [0.2fe] "297.5"
+                      // 560ssw x 244ssh => 137.5pw x 185ph (31so) [-6.5off] [0.333fe] "170"
+
+                      // Consideration: when the aspect ratio is triggered and
+                      // more width is added, the calculations stay the same;
+                      // however, if the height changes, we need to recalculate.
+
+                      // Does it look like this?
+                      // screenSafeWidth / screenSafeHeight > 0.83 ?
+                      //    heightForumula(height, width) :
+                      //    widthForumula(height, width),
                     },
+                    child: PageFlipper(
+                      // widget.width > 778
+                      //     ? 778 - widget.spineOffset
+                      //     : widget.width - widget.spineOffset,
+                      // widget.height < 674
+                      //     ? 674 - widget.spineOffset (70)
+                      //     : widget.width (560) - widget.spineOffset (70)
+                      // 5:6 || 0.8371:1 * w/h
+                      // 0.8371/1 == 560/674
+                      // 460.405
+                      key: storybookKey,
+                      width: width,
+                      height: height,
+                      layout: layout,
+                      spineOffset: layout.spineOffset,
+                      pageCount: story.length,
+                      pageBuilder: (context, index, isVisible, showBack) =>
+                          ParchmentPage(
+                            width: layout.pageWidth,
+                            height: layout.pageHeight,
+                            arwidth: width,
+                            arheight: height,
+                            seed: index,
+                            shader: pageShader,
+                            fadeStart: 0.0,
+                            // DACO
+                            // TODO: smaller screen size, i.e. mobile @ 390,
+                            // are better with bigger values, e.g. 0.333.
+                            fadeEnd: layout.fadeEnd,
+                            layout: layout,
+                            child: isVisible
+                                ? Text(
+                                    '${index + 1} $exampleText',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.inverseSurface,
+                                      fontSize: layout.fontSize,
+                                    ),
+                                  )
+                                : const SizedBox(),
+                          ),
+                      onPageChanged: (value) {
+                        print('onPageChanged: Page ${value + 1}');
+                        setState(() {
+                          chapterIndex = value;
+                        });
+                      },
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -417,6 +415,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         },
                   child: Icon(Icons.arrow_back),
                 ),
+          // TODO: delay showing solve until chapter 2 (?)
           FloatingActionButton(
             heroTag: 'solve',
             shape: RoundedRectangleBorder(
@@ -427,6 +426,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             },
             child: Icon(Icons.auto_fix_high),
           ),
+          // TODO: delay next page until all text is shown (?)
           chapterIndex + 1 >= story.length
               ? emptyFlaction()
               : FloatingActionButton(
@@ -446,69 +446,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: Icon(Icons.auto_stories),
                 ),
         ],
-      ),
-    );
-  }
-
-  Widget buildStorybookContent(
-    bool isVisible,
-    double height,
-    double width,
-    int index,
-  ) {
-    // bool isPortrait = height > width;
-
-    return Align(
-      alignment: AlignmentGeometry.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(
-          minHeight: 300,
-          // maxHeight: height > width ? width - 100 : height - 100,
-          // Note: height isn't perfect; there's some relationship
-          // that's missing based on the current width
-          maxHeight: height > width
-              ? width - 70
-              // : height - (height / 200 < 100 ? 100 : height / 200),
-              : height - 100,
-          minWidth: 250,
-          maxWidth: width > height + 175 ? height - 175 : width - 175,
-        ),
-        // constraints: BoxConstraints(
-        //   minHeight: 300,
-        //   // maxHeight: height > width ? width - 100 : height - 100,
-        //   // Note: height isn't perfect; there's some relationship
-        //   // that's missing based on the current width
-        //   maxHeight: height > width
-        //       ? width - 100
-        //       // : height - (height / 200 < 100 ? 100 : height / 200),
-        //       : height - 100,
-        //   minWidth: 250,
-        //   maxWidth: width > height ? height - 250 : width - 175,
-        // ),
-        decoration: BoxDecoration(
-          border: Border.all(),
-          color: Colors.deepPurple.shade100.withAlpha(255),
-        ),
-        // margin: EdgeInsets.only(left: height / 10 > 50 ? 50 : height / 10),
-        padding: const EdgeInsets.all(20),
-        height: height,
-        width: width,
-        child: GestureDetector(
-          onLongPress: () {
-            print('($width, $height)');
-          },
-          child: SingleChildScrollView(
-            child: isVisible
-                ? Texxt(
-                    story[index]
-                        .replaceAll('. ', '.\n\n')
-                        .replaceAll('! ', '!\n\n')
-                        .replaceAll('? ', '?\n\n'),
-                    size: 12 + (width > height ? height / 25 : width / 25),
-                  )
-                : const SizedBox(),
-          ),
-        ),
       ),
     );
   }
