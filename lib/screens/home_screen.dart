@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+// import 'package:go_router/go_router.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,22 +25,26 @@ class HomeScreen extends StatefulWidget {
 // fanfare in the background. Player can keep reading or go on to the next story.
 // 3) At the end of the chapters, give the Player one last chance to solve or
 // give them the answer.
+// 4) Remove title bar on landscape; incorporate floating menu button / drawer
+// 5) Increase storybook cover opening to entire side of the screen
+// 6) State management for Settings:
+// - Theme / Font style (font size (?))
+// - Toggle floating action buttons (bottom)
+// 7) Use storybook icon and flip for left / prev page
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool canProceed = false;
   bool hasPrev = false;
   bool isOpened = false;
   bool isVideoInitialized = false;
-  double raggedness = 0;
+  bool showFloatingMenu = true;
   int chapterIndex = 0;
   int checkpointIndex = 0;
   int parchmentSeed = 0;
   List<String> story = [];
-  String exampleText =
-      'If this never prints, the widget isn\'t in the tree at all — easy to do if it\'s built conditionally and that condition isn\'t true yet, or if it\'s nested inside something that hasn\'t been reached.';
 
   bool hasShader = false;
-  bool showShader = false;
+  // bool showShader = false;
   late ui.FragmentShader pageShader;
 
   // PageImageCache? _imageCache;
@@ -69,52 +75,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     story = Story.storyExample1.chapters;
   }
 
-  void initializeScrollTimer() {
-    // print('initializeScrollTimer');
-    setState(() {
-      scrollTimer = Timer.periodic(Duration(milliseconds: 300), (tick) {
-        // print('tick: ${tick.tick}');
-        if (scrollController.hasClients) {
-          // print('hasClients');
-          final maxScroll = scrollController.position.maxScrollExtent;
-          // print('animating to: $maxScroll');
-          if (chapterIndex == checkpointIndex) {
-            // print("SCROLL");
-            scrollController.animateTo(
-              maxScroll,
-              duration: Duration(milliseconds: 300),
-              curve: Curves.linear,
-            );
-          }
-        }
-        if (canProceed) {
-          print('can proceed, so murder');
-          scrollTimer.cancel();
-        }
-        // TODO: remove this after debugging
-        // if (tick.tick > 30) {
-        //   print('30 ticks: cancel for safety');
-        //   scrollTimer.cancel();
-        // }
-      });
-    });
-  }
-
-  Future<void> loadShader() async {
-    final program = await ui.FragmentProgram.fromAsset(
-      'assets/shaders/parchment_page.frag',
-    );
-    setState(() {
-      // curlShader = program.fragmentShader();
-      pageShader = program.fragmentShader();
-      hasShader = true;
-    });
-    await Future.delayed(Duration(milliseconds: 100));
-    setState(() {
-      showShader = true;
-    });
-  }
-
   @override
   void dispose() {
     // curlShader?.dispose();
@@ -129,24 +89,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // Size size = MediaQuery.of(context).size;
+    Size size = MediaQuery.of(context).size;
+    bool isPortrait = size.height > size.width; // TODO: a better way for this
+    // print('size: $size');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Texxt(
-          // 'Once Upon a Time (${size.width}, ${size.height})',
-          'Once Upon a Time',
-          isOlde: true,
-          useDark: false,
-        ),
-        actions: [
-          // IconButton(icon: Icon(Icons.info), onPressed: () {}),
-        ],
-      ),
+      // appBar: AppBar(
+      //   title: Texxt(
+      //     // 'Once Upon a Time (${size.width}, ${size.height})',
+      //     'Once Upon a Time',
+      //     isOlde: true,
+      //     useDark: false,
+      //   ),
+      //   actions: [
+      //     // IconButton(icon: Icon(Icons.info), onPressed: () {}),
+      //   ],
+      // ),
+      appBar: CustomAppBar(isPortrait: isPortrait),
+      endDrawer: CustomDrawer(resetStory: resetStory),
       floatingActionButton: AnimatedOpacity(
         opacity: isOpened ? 1 : 0,
         duration: Duration(milliseconds: 500),
-        child: buildStorybookActions(),
+        child: BlocBuilder<SettingsCubit, SettingsState>(
+          builder: (context, state) {
+            return state.showActionButtons
+                ? buildStorybookActions()
+                : const SizedBox();
+          },
+        ),
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -274,6 +244,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     },
                   ),
                 ],
+                !isPortrait
+                    ? Positioned(
+                        right: 10,
+                        top: 10,
+                        child: FloatingActionButton(
+                          heroTag: 'prevChp',
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadiusGeometry.circular(100),
+                          ),
+                          onPressed: () {
+                            Scaffold.of(context).openEndDrawer();
+                          },
+                          child: Transform.flip(
+                            flipX: true,
+                            child: Icon(
+                              Icons.menu_book,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                        ),
+                      )
+                    : const SizedBox(),
               ],
             );
           },
@@ -282,78 +274,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget buildChapterText(BookLayout layout, bool showText, int index) {
-    // print('buildChapterText');
-    // print('showBack: $showBack');
-    String chapterText = story[index]
-        .replaceAll('. ', '.\n\n')
-        .replaceAll('! ', '!\n\n')
-        .replaceAll('? ', '?\n\n');
-
-    return SingleChildScrollView(
-      controller: scrollController,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (index == 0) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'O',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.inverseSurface,
-                    fontSize: layout.fontSize * 3,
-                    fontFamily: 'HoldMoney',
-                    height: 1,
-                  ),
-                ),
-                Texxt(
-                  ' nce upon a time..',
-                  size: layout.fontSize,
-                  useDark: true,
-                ),
-              ],
-            ),
-          ],
-          index < checkpointIndex
-              ? Texxt(chapterText, size: layout.fontSize, useDark: true)
-              : AnimatedTextKit(
-                  controller: textController,
-                  // onNext: (index, last) {
-                  //   print('onNext index: $index');
-                  //   print('onNext last: $last');
-                  // }, // (RIP) overridden
-                  // onNextBeforePause: (index, last) {
-                  //   print('onNextBeforePause index: $index');
-                  //   print('onNextBeforePause last: $last');
-                  // }, // (RIP) overridden
-                  isRepeatingAnimation: false,
-                  // displayFullTextOnTap: true, // (RIP) overridden
-                  pause: const Duration(milliseconds: 1000),
-                  // stopPauseOnTap: true, // (RIP) overridden
-                  onTap: () {}, // (RIP) overridden
-                  onFinished: () {
-                    print('onFinished');
-                    setState(() {
-                      canProceed = true;
-                    });
-                  },
-                  animatedTexts: [
-                    TyperAnimatedText(
-                      // '${index + 1} $exampleText $exampleText',
-                      chapterText,
-                      textStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.inverseSurface,
-                        fontSize: layout.fontSize,
-                      ),
-                      speed: const Duration(milliseconds: 30),
-                    ),
-                  ],
-                ),
-        ],
-      ),
+  Future<void> loadShader() async {
+    final program = await ui.FragmentProgram.fromAsset(
+      'assets/shaders/parchment_page.frag',
     );
+    setState(() {
+      // curlShader = program.fragmentShader();
+      pageShader = program.fragmentShader();
+      hasShader = true;
+      // showShader = true;
+    });
   }
 
   List<Widget> buildBackgroundVeil(
@@ -433,6 +363,198 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ];
   }
 
+  void initializeScrollTimer() {
+    // print('initializeScrollTimer');
+    setState(() {
+      scrollTimer = Timer.periodic(Duration(milliseconds: 300), (tick) {
+        // print('tick: ${tick.tick}');
+        if (scrollController.hasClients) {
+          // print('hasClients');
+          final maxScroll = scrollController.position.maxScrollExtent;
+          // print('animating to: $maxScroll');
+          if (chapterIndex == checkpointIndex) {
+            // print("SCROLL");
+            scrollController.animateTo(
+              maxScroll,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.linear,
+            );
+          }
+        }
+        if (canProceed) {
+          // print('can proceed, so cancel');
+          scrollTimer.cancel();
+        }
+        // TODO: remove this after debugging
+        // if (tick.tick > 30) {
+        //   print('30 ticks: cancel for safety');
+        //   scrollTimer.cancel();
+        // }
+      });
+    });
+  }
+
+  void resetStory() {
+    print('reset story');
+    setState(() {
+      textController.pause();
+      scrollController.dispose();
+      scrollController = ScrollController();
+      canProceed = false;
+      hasPrev = false;
+      chapterIndex = 0;
+      checkpointIndex = 0;
+      textController.reset();
+      textController.play();
+    });
+    initializeScrollTimer();
+  }
+
+  Widget buildChapterText(BookLayout layout, bool showText, int index) {
+    // print('buildChapterText');
+    // print('showBack: $showBack');
+    String chapterText = story[index]
+        .replaceAll('. ', '.\n\n')
+        .replaceAll('! ', '!\n\n')
+        .replaceAll('? ', '?\n\n');
+
+    return SingleChildScrollView(
+      controller: scrollController,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (index == 0) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Texxt(
+                  'O',
+                  size: layout.fontSize * 3,
+                  // style: TextStyle(
+                  //   color: Theme.of(context).colorScheme.inverseSurface,
+                  //   fontSize: layout.fontSize * 3,
+                  //   fontFamily: context.read<SettingsCubit>().state.fontFamily,
+                  //   height: 1,
+                  // ),
+                  height: 1,
+                ),
+                Expanded(
+                  child: Texxt(
+                    'nce upon a time..',
+                    size: layout.fontSize,
+                    height: 1.333,
+                    useDark: true,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: layout.fontSize),
+            // RichText(
+            //   text: TextSpan(
+            //     text: 'O',
+            //     style: TextStyle(
+            //       color: Theme.of(context).colorScheme.inverseSurface,
+            //       fontSize: layout.fontSize * 2,
+            //       fontFamily: context.read<SettingsCubit>().state.fontFamily,
+            //       height: 1,
+            //     ),
+            //     children: [
+            //       TextSpan(
+            //         text: 'nce upon a time..',
+            //         style: TextStyle(
+            //           color:
+            //               1 + 1 ==
+            //                   2 // useDark!
+            //               ? Theme.of(context).colorScheme.inverseSurface
+            //               : Theme.of(context).colorScheme.surface,
+            //           fontFamily: context
+            //               .read<SettingsCubit>()
+            //               .state
+            //               .fontFamily,
+            //           fontSize: layout.fontSize,
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // LayoutBuilder(
+            //   builder: (context, constraints) {
+            //     return Container(
+            //       color: Colors.blue.shade100,
+            //       width: constraints.maxWidth,
+            //       child: Wrap(
+            //         // crossAxisAlignment: CrossAxisAlignment.start,
+            //         // alignment: WrapAlignment.start,
+            //         crossAxisAlignment: WrapCrossAlignment.start,
+            //         children: [
+            //           Text(
+            //             'O',
+            //             style: TextStyle(
+            //               color: Theme.of(context).colorScheme.inverseSurface,
+            //               fontSize: layout.fontSize * 3,
+            //               fontFamily: context
+            //                   .read<SettingsCubit>()
+            //                   .state
+            //                   .fontFamily,
+            //               height: 1,
+            //             ),
+            //           ),
+            //           Texxt(
+            //             ' nce upon a time..',
+            //             size: layout.fontSize,
+            //             useDark: true,
+            //           ),
+            //         ],
+            //       ),
+            //     );
+            //   },
+            // ),
+          ],
+          index < checkpointIndex
+              ? Texxt(chapterText, size: layout.fontSize, useDark: true)
+              : BlocBuilder<SettingsCubit, SettingsState>(
+                  builder: (context, state) {
+                    return AnimatedTextKit(
+                      controller: textController,
+                      // onNext: (index, last) {
+                      //   print('onNext index: $index');
+                      //   print('onNext last: $last');
+                      // }, // (RIP) overridden
+                      // onNextBeforePause: (index, last) {
+                      //   print('onNextBeforePause index: $index');
+                      //   print('onNextBeforePause last: $last');
+                      // }, // (RIP) overridden
+                      isRepeatingAnimation: false,
+                      // displayFullTextOnTap: true, // (RIP) overridden
+                      pause: const Duration(milliseconds: 1000),
+                      // stopPauseOnTap: true, // (RIP) overridden
+                      onTap: () {}, // (RIP) overridden
+                      onFinished: () {
+                        // print('onFinished');
+                        setState(() {
+                          canProceed = true;
+                        });
+                      },
+                      animatedTexts: [
+                        TyperAnimatedText(
+                          // '${index + 1} $exampleText $exampleText',
+                          chapterText,
+                          textStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.inverseSurface,
+                            fontSize: layout.fontSize,
+                            fontFamily: state.fontFamily,
+                          ),
+                          speed: const Duration(milliseconds: 30),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+        ],
+      ),
+    );
+  }
+
   Widget buildStorybookActions() {
     return Container(
       padding: const EdgeInsets.only(left: 30),
@@ -455,11 +577,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           });
                           storybookKey.currentState?.prevPage();
                         },
-                  child: Icon(
-                    Icons.arrow_back,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
+                  child: Transform.flip(
+                    flipX: true,
+                    child: Icon(
+                      Icons.auto_stories,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
+                    ),
                   ),
                 ),
           // TODO: delay showing solve until chapter 2 (?)
@@ -474,7 +599,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     print('TODO: solve');
                   },
             child: Icon(
-              Icons.auto_fix_high,
+              Icons.auto_awesome,
               color: Theme.of(
                 context,
               ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),

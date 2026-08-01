@@ -105,7 +105,7 @@ BookLayout computeBookLayout({
   // bookWidth directly - within ~2px on almost every measured row.
   final prevWidth = pageWidth + 1.12 * spineOffset;
 
-  final fontSize = spineOffset / 3;
+  final fontSize = spineOffset / 2.5;
 
   return BookLayout(
     bookWidth: bookWidth,

@@ -52,11 +52,19 @@ flutter:
     - assets/vids/
 
   fonts:
+    - family: Alagard
+      fonts:
+        - asset: assets/fonts/alagard.ttf
     - family: HoldMoney
       fonts:
         - asset: assets/fonts/HoldMoney-Regular.ttf
+    - family: Storybook
+      fonts:
+        - asset: assets/fonts/Storyboo.TTF
 
   shaders:
     - assets/shaders/fbs_gradient.frag
+    - assets/shaders/instanced_shape_morph.frag
     - assets/shaders/page_curl.frag
     - assets/shaders/parchment_page.frag
+    - assets/shaders/shape_morph.frag

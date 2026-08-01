@@ -13,6 +13,12 @@ Stories retold from a new perspective. Can you figure out the what and who?
 > [LowPoly Book](https://tekilor.itch.io/lowpoly-book)
 > via Tekila
 
+> [The Book of Shaders](https://thebookofshaders.com/)
+> via Patricio Gonzalez Vivo and Jen Lowe
+
+> [Alagard](https://www.dafont.com/alagard.font)
+> via Hewett Tsoi
+
 ### Special Thanks:
 
 - [Flutter](https://flutter.dev/)
@@ -22,6 +28,7 @@ Stories retold from a new perspective. Can you figure out the what and who?
 - Adobe
 - ScreenFlow
 - Claude
+- DaFont
 
 ---
 

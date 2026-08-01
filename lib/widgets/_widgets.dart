@@ -1,7 +1,12 @@
+export 'background_veil.dart';
 export 'background_video.dart';
 export 'book_layout.dart';
 export 'curling_page.dart';
+export 'custom_app_bar.dart';
+export 'custom_drawer.dart';
+export 'elapsed_second_clock.dart';
 export 'page_flipper.dart';
 export 'parchment_page.dart';
+export 'shape_grid.dart';
 export 'storybook.dart';
 export 'texxt.dart';

@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:once_upon_a_time/barrel.dart';
@@ -32,11 +33,18 @@ class OnceUponATime extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      routerConfig: goRouter,
-      // theme: state == Brightness.dark ? darkTheme() : lightTheme(),
-      theme: darkTheme(),
+    return MultiBlocProvider(
+      providers: [BlocProvider(create: (context) => SettingsCubit())],
+      child: BlocBuilder<SettingsCubit, SettingsState>(
+        builder: (context, state) {
+          return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            routerConfig: goRouter,
+            // theme: state == Brightness.dark ? darkTheme() : lightTheme(),
+            theme: darkTheme(),
+          );
+        },
+      ),
     );
   }
 }

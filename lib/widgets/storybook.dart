@@ -59,79 +59,84 @@ class StorybookState extends State<Storybook>
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.width,
-      height: widget.height,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: AnimatedOpacity(
-              opacity: !opening ? 1 : 0,
-              duration: Duration(milliseconds: 2000),
-              child: Container(
-                alignment: Alignment.centerLeft,
-                margin: const EdgeInsets.only(right: 25),
-                child: Image.asset(
-                  'assets/images/storybook-open-pages.png',
-                  scale: 0.1,
-                ),
-              ),
-            ),
-          ),
-
-          Positioned.fill(
-            child: AnimatedOpacity(
-              opacity: opening ? 1 : 0,
-              duration: Duration(milliseconds: 300),
-              child: Container(
-                alignment: Alignment.centerLeft,
-                margin: const EdgeInsets.only(right: 25),
-                child: Image.asset(
-                  'assets/images/storybook-open-full.png',
-                  scale: 0.1,
-                ),
-              ),
-            ),
-          ),
-
-          Positioned.fill(
-            child: AnimatedOpacity(
-              opacity: opened ? 1 : 0,
-              duration: Duration(milliseconds: 300),
-              child: Container(
-                alignment: Alignment.centerLeft,
-                margin: const EdgeInsets.only(right: 25),
-                child: widget.pages,
-              ),
-            ),
-          ),
-
-          // The front cover, hinged at the spine (left edge).
-          if (!opened)
+    return GestureDetector(
+      onTap: open,
+      child: Container(
+        color: Colors.transparent,
+        width: widget.width,
+        height: widget.height,
+        child: Stack(
+          children: [
             Positioned.fill(
-              child: AnimatedBuilder(
-                animation: swing,
-                builder: (context, child) {
-                  final angle = (math.pi / 2.05) * swing.value;
-                  final fade =
-                      1.0 -
-                      Curves.easeIn.transform(
-                        (swing.value - 0.7).clamp(0.0, 0.3) / 0.3,
-                      );
-
-                  return Opacity(
-                    opacity: fade,
-                    child: Transform(
-                      alignment: Alignment.centerLeft,
-                      transform: _perspectiveMatrix()..rotateY(angle),
-                      child: child,
-                    ),
-                  );
-                },
-                child: GestureDetector(onTap: open, child: widget.frontCover),
+              child: AnimatedOpacity(
+                opacity: !opening ? 1 : 0,
+                duration: Duration(milliseconds: 2000),
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  margin: const EdgeInsets.only(right: 25),
+                  child: Image.asset(
+                    'assets/images/storybook-open-pages.png',
+                    scale: 0.1,
+                  ),
+                ),
               ),
             ),
-        ],
+
+            Positioned.fill(
+              child: AnimatedOpacity(
+                opacity: opening ? 1 : 0,
+                duration: Duration(milliseconds: 300),
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  margin: const EdgeInsets.only(right: 25),
+                  child: Image.asset(
+                    'assets/images/storybook-open-full.png',
+                    scale: 0.1,
+                  ),
+                ),
+              ),
+            ),
+
+            Positioned.fill(
+              child: AnimatedOpacity(
+                opacity: opened ? 1 : 0,
+                duration: Duration(milliseconds: 300),
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  margin: const EdgeInsets.only(right: 25),
+                  child: widget.pages,
+                ),
+              ),
+            ),
+
+            // The front cover, hinged at the spine (left edge).
+            if (!opened)
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: swing,
+                  builder: (context, child) {
+                    final angle = (math.pi / 2.05) * swing.value;
+                    final fade =
+                        1.0 -
+                        Curves.easeIn.transform(
+                          (swing.value - 0.7).clamp(0.0, 0.3) / 0.3,
+                        );
+
+                    return Opacity(
+                      opacity: fade,
+                      child: Transform(
+                        alignment: Alignment.centerLeft,
+                        transform: _perspectiveMatrix()..rotateY(angle),
+                        child: child,
+                      ),
+                    );
+                  },
+                  // child: GestureDetector(onTap: open, child: widget.frontCover),
+                  child: widget.frontCover,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

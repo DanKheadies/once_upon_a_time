@@ -2,15 +2,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
-/// Loads the parchment page shader once. Call this near app/book startup,
-/// same as you're already doing for the curl shader, and hold the result
-/// in state - don't reload it per page or per rebuild.
-Future<ui.FragmentShader> loadParchmentPageShader() async {
-  final program = await ui.FragmentProgram.fromAsset(
-    'shaders/parchment_page.frag',
-  );
-  return program.fragmentShader();
-}
+// /// Loads the parchment page shader once. Call this near app/book startup,
+// /// same as you're already doing for the curl shader, and hold the result
+// /// in state - don't reload it per page or per rebuild.
+// Future<ui.FragmentShader> loadParchmentPageShader() async {
+//   final program = await ui.FragmentProgram.fromAsset(
+//     'shaders/parchment_page.frag',
+//   );
+//   return program.fragmentShader();
+// }
 
 /// A single parchment page background, rendered via the shader, with page
 /// content laid on top. One shader INSTANCE can be reused across all pages,

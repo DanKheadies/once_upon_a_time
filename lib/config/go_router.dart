@@ -24,6 +24,16 @@ final GoRouter goRouter = GoRouter(
             FadeTransition(opacity: animation, child: child),
       ),
     ),
+    GoRoute(
+      path: '/stage',
+      name: 'stage',
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const StageScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    ),
   ],
   errorPageBuilder: (context, state) => CustomTransitionPage(
     key: state.pageKey,
