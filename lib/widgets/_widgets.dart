@@ -7,6 +7,7 @@ export 'custom_drawer.dart';
 export 'elapsed_second_clock.dart';
 export 'page_flipper.dart';
 export 'parchment_page.dart';
+export 'pixelate_effect.dart';
 export 'shape_grid.dart';
 export 'storybook.dart';
 export 'texxt.dart';

@@ -25,16 +25,11 @@ class HomeScreen extends StatefulWidget {
 // fanfare in the background. Player can keep reading or go on to the next story.
 // 3) At the end of the chapters, give the Player one last chance to solve or
 // give them the answer.
-// 4) Remove title bar on landscape; incorporate floating menu button / drawer
-// 5) Increase storybook cover opening to entire side of the screen
-// 6) State management for Settings:
-// - Theme / Font style (font size (?))
-// - Toggle floating action buttons (bottom)
-// 7) Use storybook icon and flip for left / prev page
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool canProceed = false;
   bool hasPrev = false;
+  bool hasShader = false;
   bool isOpened = false;
   bool isVideoInitialized = false;
   bool showFloatingMenu = true;
@@ -43,19 +38,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int parchmentSeed = 0;
   List<String> story = [];
 
-  bool hasShader = false;
-  // bool showShader = false;
-  late ui.FragmentShader pageShader;
-
-  // PageImageCache? _imageCache;
-  // ui.FragmentShader? curlShader;
-
   final GlobalKey<PageFlipperState> storybookKey = GlobalKey();
 
   late final AnimationController entrance;
   late final AnimatedTextController textController;
   late ScrollController scrollController;
   late Timer scrollTimer;
+  late ui.FragmentShader pageShader;
 
   @override
   void initState() {
@@ -77,7 +66,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    // curlShader?.dispose();
     entrance.dispose();
     pageShader.dispose();
     scrollController.dispose();
@@ -91,20 +79,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     bool isPortrait = size.height > size.width; // TODO: a better way for this
-    // print('size: $size');
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Texxt(
-      //     // 'Once Upon a Time (${size.width}, ${size.height})',
-      //     'Once Upon a Time',
-      //     isOlde: true,
-      //     useDark: false,
-      //   ),
-      //   actions: [
-      //     // IconButton(icon: Icon(Icons.info), onPressed: () {}),
-      //   ],
-      // ),
       appBar: CustomAppBar(isPortrait: isPortrait),
       endDrawer: CustomDrawer(resetStory: resetStory),
       floatingActionButton: AnimatedOpacity(
@@ -130,30 +106,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
             return Stack(
               children: [
-                // PageTextureCapture(
-                //   pageCount: story.length, // _pageCount,
-                //   pageWidth: width, // _flipAreaWidth,
-                //   pageHeight: height, // _pageHeight,
-                //   // pageBuilder: _pageContent,
-                //   pageBuilder: (context, index) => ParchmentPagePlaceholder(
-                //     height: 500, // height
-                //     width: width,
-                //     seed: index,
-                //     text: '${index + 1} $exampleText',
-                //   ),
-                //   onReady: (cache) {
-                //     debugPrint('onReady fired, cache.isReady = ${cache.isReady}');
-                //     setState(
-                //       () => _imageCache = cache,
-                //     ); // <- the setState was the missing piece
-                //   },
-                // ),
-                BackgroundVideo(
-                  isInitialized: () {
-                    setState(() {
-                      isVideoInitialized = true;
-                    });
-                  },
+                Transform.flip(
+                  flipX: true,
+                  child: BackgroundVideo(
+                    isInitialized: () {
+                      setState(() {
+                        isVideoInitialized = true;
+                      });
+                    },
+                  ),
                 ),
                 ...buildBackgroundVeil(
                   context,
@@ -395,7 +356,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void resetStory() {
-    print('reset story');
+    // print('reset story');
     setState(() {
       textController.pause();
       scrollController.dispose();
@@ -411,8 +372,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget buildChapterText(BookLayout layout, bool showText, int index) {
-    // print('buildChapterText');
-    // print('showBack: $showBack');
     String chapterText = story[index]
         .replaceAll('. ', '.\n\n')
         .replaceAll('! ', '!\n\n')
@@ -427,17 +386,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Texxt(
-                  'O',
-                  size: layout.fontSize * 3,
-                  // style: TextStyle(
-                  //   color: Theme.of(context).colorScheme.inverseSurface,
-                  //   fontSize: layout.fontSize * 3,
-                  //   fontFamily: context.read<SettingsCubit>().state.fontFamily,
-                  //   height: 1,
-                  // ),
-                  height: 1,
-                ),
+                Texxt('O', size: layout.fontSize * 3, height: 1),
                 Expanded(
                   child: Texxt(
                     'nce upon a time..',
@@ -449,66 +398,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
             SizedBox(height: layout.fontSize),
-            // RichText(
-            //   text: TextSpan(
-            //     text: 'O',
-            //     style: TextStyle(
-            //       color: Theme.of(context).colorScheme.inverseSurface,
-            //       fontSize: layout.fontSize * 2,
-            //       fontFamily: context.read<SettingsCubit>().state.fontFamily,
-            //       height: 1,
-            //     ),
-            //     children: [
-            //       TextSpan(
-            //         text: 'nce upon a time..',
-            //         style: TextStyle(
-            //           color:
-            //               1 + 1 ==
-            //                   2 // useDark!
-            //               ? Theme.of(context).colorScheme.inverseSurface
-            //               : Theme.of(context).colorScheme.surface,
-            //           fontFamily: context
-            //               .read<SettingsCubit>()
-            //               .state
-            //               .fontFamily,
-            //           fontSize: layout.fontSize,
-            //         ),
-            //       ),
-            //     ],
-            //   ),
-            // ),
-            // LayoutBuilder(
-            //   builder: (context, constraints) {
-            //     return Container(
-            //       color: Colors.blue.shade100,
-            //       width: constraints.maxWidth,
-            //       child: Wrap(
-            //         // crossAxisAlignment: CrossAxisAlignment.start,
-            //         // alignment: WrapAlignment.start,
-            //         crossAxisAlignment: WrapCrossAlignment.start,
-            //         children: [
-            //           Text(
-            //             'O',
-            //             style: TextStyle(
-            //               color: Theme.of(context).colorScheme.inverseSurface,
-            //               fontSize: layout.fontSize * 3,
-            //               fontFamily: context
-            //                   .read<SettingsCubit>()
-            //                   .state
-            //                   .fontFamily,
-            //               height: 1,
-            //             ),
-            //           ),
-            //           Texxt(
-            //             ' nce upon a time..',
-            //             size: layout.fontSize,
-            //             useDark: true,
-            //           ),
-            //         ],
-            //       ),
-            //     );
-            //   },
-            // ),
           ],
           index < checkpointIndex
               ? Texxt(chapterText, size: layout.fontSize, useDark: true)
@@ -516,28 +405,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   builder: (context, state) {
                     return AnimatedTextKit(
                       controller: textController,
-                      // onNext: (index, last) {
-                      //   print('onNext index: $index');
-                      //   print('onNext last: $last');
-                      // }, // (RIP) overridden
-                      // onNextBeforePause: (index, last) {
-                      //   print('onNextBeforePause index: $index');
-                      //   print('onNextBeforePause last: $last');
-                      // }, // (RIP) overridden
                       isRepeatingAnimation: false,
+                      // onNext: (index, last) {}, // (RIP) overridden
+                      // onNextBeforePause: (index, last) {}, // (RIP) overridden
                       // displayFullTextOnTap: true, // (RIP) overridden
-                      pause: const Duration(milliseconds: 1000),
                       // stopPauseOnTap: true, // (RIP) overridden
+                      pause: const Duration(milliseconds: 1000),
                       onTap: () {}, // (RIP) overridden
                       onFinished: () {
-                        // print('onFinished');
                         setState(() {
                           canProceed = true;
                         });
                       },
                       animatedTexts: [
                         TyperAnimatedText(
-                          // '${index + 1} $exampleText $exampleText',
                           chapterText,
                           textStyle: TextStyle(
                             color: Theme.of(context).colorScheme.inverseSurface,

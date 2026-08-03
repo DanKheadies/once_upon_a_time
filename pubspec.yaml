@@ -69,4 +69,5 @@ flutter:
     - assets/shaders/logo_tint.frag
     - assets/shaders/page_curl.frag
     - assets/shaders/parchment_page.frag
+    - assets/shaders/pixelate.frag
     - assets/shaders/shape_morph.frag
