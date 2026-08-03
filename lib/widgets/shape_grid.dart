@@ -13,6 +13,7 @@ class ShapeInstanceLayout {
     this.timeOffsets,
     this.instanceScale,
     this.shaders, {
+    this.logoImage,
     this.velocities,
   });
 
@@ -20,6 +21,11 @@ class ShapeInstanceLayout {
   final List<double> timeOffsets; // seconds, desyncs each shape's cycle
   final double instanceScale; // px "radius" per shape
   final List<ui.FragmentShader> shaders;
+
+  /// Held here so it isn't garbage collected while a shader is still
+  /// sampling it — setImageSampler() binds the texture, but doesn't by
+  /// itself keep the Dart-side ui.Image object alive.
+  final ui.Image? logoImage;
 
   /// Normalized units/second, e.g. 0.1 == crosses 10% of the canvas per
   /// second. Null for static (.grid / .chaotic) layouts — advance() is then
@@ -40,6 +46,7 @@ class ShapeInstanceLayout {
     int seed = 7,
     Color shapeColor = const Color(0xFFF28C26),
     Color backgroundColor = const Color(0x00000000),
+    ui.Image? logoImage,
   }) {
     final rnd = Random(seed);
     final positions = List.generate(
@@ -58,8 +65,9 @@ class ShapeInstanceLayout {
         shapeColor,
         backgroundColor,
         program,
-        random: rnd,
-        shapeColors: [Colors.red, Colors.white, Colors.lightBlue],
+        logoImage: logoImage,
+        // random: rnd,
+        // shapeColors: [Colors.red, Colors.white, Colors.lightBlue],
       ),
     );
     return ShapeInstanceLayout._(
@@ -67,6 +75,7 @@ class ShapeInstanceLayout {
       offsets,
       instanceScale,
       shaders,
+      logoImage: logoImage,
       velocities: velocities,
     );
   }
@@ -148,8 +157,8 @@ class ShapeInstanceLayout {
 
     // Keep the shape's visible edge (not just its center point) inside the
     // canvas — same margin logic as the draw-call bounding box.
-    final marginX = (instanceScale * 1.6) / canvasSize.width;
-    final marginY = (instanceScale * 1.6) / canvasSize.height;
+    final marginX = min((instanceScale * 1.6) / canvasSize.width, 0.49);
+    final marginY = min((instanceScale * 1.6) / canvasSize.height, 0.49);
 
     for (var i = 0; i < positions.length; i++) {
       var p = positions[i] + v[i] * dt;
@@ -179,8 +188,10 @@ class ShapeInstanceLayout {
     ui.FragmentProgram program, {
     List<Color>? shapeColors,
     Random? random,
+    ui.Image? logoImage,
   }) {
     final shader = program.fragmentShader();
+
     if (random != null && shapeColors != null && shapeColors.isNotEmpty) {
       List<Color> colors = shapeColors.toList();
       Random rando = random;
@@ -203,7 +214,43 @@ class ShapeInstanceLayout {
         ..setFloat(10, backgroundColor.b)
         ..setFloat(11, backgroundColor.a);
     }
+
+    if (logoImage != null) {
+      shader.setImageSampler(0, logoImage);
+    }
+
     return shader;
+  }
+
+  /// Rasterizes arbitrary text into a ui.Image once — pass the result to
+  /// .bouncing(logoImage: ...) along with logo_tint.frag's compiled program.
+  /// Only the alpha channel matters; fill color here is irrelevant since the
+  /// shader recolors it via uShapeColor.
+  static Future<ui.Image> rasterizeTextLogo(
+    String text, {
+    TextStyle style = const TextStyle(
+      fontSize: 64,
+      fontWeight: FontWeight.w900,
+      fontStyle: FontStyle.italic,
+      color: Color(0xFFFFFFFF),
+    ),
+    double padding = 8,
+  }) async {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final size = Size(
+      painter.width + padding * 2,
+      painter.height + padding * 2,
+    );
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, Offset.zero & size);
+    painter.paint(canvas, Offset(padding, padding));
+
+    final picture = recorder.endRecording();
+    return picture.toImage(size.width.ceil(), size.height.ceil());
   }
 
   /// Call when this layout is no longer needed (e.g. from State.dispose()).
@@ -211,6 +258,7 @@ class ShapeInstanceLayout {
     for (final s in shaders) {
       s.dispose();
     }
+    logoImage?.dispose();
   }
 }
 

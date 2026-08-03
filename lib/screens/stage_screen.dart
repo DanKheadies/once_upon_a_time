@@ -23,8 +23,11 @@ class _StageScreenState extends State<StageScreen> {
   // bool isGrid = true;
   GridType gridType = GridType.grid;
 
+  late ui.Image logo;
   late ShapeInstanceLayout? gridLayout;
-  late ui.FragmentProgram program;
+  late ui.FragmentProgram logoProgram;
+  late ui.FragmentProgram shapeProgram;
+  late ui.FragmentShader logoShader;
   late ui.FragmentShader shapeShader;
 
   late final ElapsedSecondsClock clock;
@@ -43,6 +46,7 @@ class _StageScreenState extends State<StageScreen> {
   void dispose() {
     clock.dispose();
     gridLayout?.dispose();
+    logoShader.dispose();
     shapeShader.dispose();
     super.dispose();
   }
@@ -70,7 +74,7 @@ class _StageScreenState extends State<StageScreen> {
             double height = constraints.maxHeight;
             double width = constraints.maxWidth;
 
-            print('($width, $height)');
+            // print('($width, $height)');
 
             return Stack(
               children: [
@@ -102,7 +106,8 @@ class _StageScreenState extends State<StageScreen> {
                     bottom: 10,
                     right: 10,
                     child: FloatingActionButton(
-                      onPressed: () => toggleGridLayout(program),
+                      onPressed: () =>
+                          toggleGridLayout(shapeProgram, logoProgram),
                       child: Icon(Icons.gas_meter),
                     ),
                   ),
@@ -116,33 +121,49 @@ class _StageScreenState extends State<StageScreen> {
   }
 
   Future<void> loadShaders() async {
-    final uiProgram = await ui.FragmentProgram.fromAsset(
+    final logoFragProgram = await ui.FragmentProgram.fromAsset(
+      'assets/shaders/logo_tint.frag',
+    );
+    final shapeFragProgram = await ui.FragmentProgram.fromAsset(
       'assets/shaders/instanced_shape_morph.frag',
     );
 
+    final logoImage = await ShapeInstanceLayout.rasterizeTextLogo('DVD');
+
     setState(() {
-      gridLayout = ShapeInstanceLayout.grid(
-        program: uiProgram,
-        columns: 10,
-        rows: 10,
-        instanceScale: 12,
+      gridLayout = ShapeInstanceLayout.bouncing(
+        program: logoFragProgram,
+        logoImage: logoImage,
+        count: 13,
       );
+      // gridLayout = ShapeInstanceLayout.grid(
+      //   program: shapeFragProgram,
+      //   columns: 10,
+      //   rows: 10,
+      //   instanceScale: 12,
+      // );
       // gridLayout = ShapeInstanceLayout.chaotic(
-      //   program: uiProgram,
+      //   program: shapeFragProgram,
       //   count: 69,
       //   instanceScale: 12,
       // );
-      shapeShader = uiProgram.fragmentShader();
+      logo = logoImage;
+      logoProgram = logoFragProgram;
+      logoShader = logoFragProgram.fragmentShader();
+      shapeProgram = shapeFragProgram;
+      shapeShader = shapeFragProgram.fragmentShader();
       hasShader = true;
-      program = uiProgram;
     });
   }
 
-  void toggleGridLayout(ui.FragmentProgram program) {
+  void toggleGridLayout(
+    ui.FragmentProgram generalProgram,
+    ui.FragmentProgram logoProgram,
+  ) {
     if (gridType == GridType.bouncing) {
       setState(() {
         gridLayout = ShapeInstanceLayout.chaotic(
-          program: program,
+          program: generalProgram,
           count: 69,
           // shapeColor: Colors.black,
           // backgroundColor: Colors.white,
@@ -153,7 +174,7 @@ class _StageScreenState extends State<StageScreen> {
     } else if (gridType == GridType.chaotic) {
       setState(() {
         gridLayout = ShapeInstanceLayout.grid(
-          program: program,
+          program: generalProgram,
           columns: 10,
           rows: 10,
           shapeColor: const Color(0xFF3AA6FF),
@@ -164,7 +185,8 @@ class _StageScreenState extends State<StageScreen> {
     } else if (gridType == GridType.grid) {
       setState(() {
         gridLayout = ShapeInstanceLayout.bouncing(
-          program: program,
+          program: logoProgram,
+          logoImage: logo,
           count: 20,
           instanceScale: 16,
           minSpeed: 0.08,

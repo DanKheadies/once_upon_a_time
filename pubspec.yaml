@@ -63,8 +63,10 @@ flutter:
         - asset: assets/fonts/Storyboo.TTF
 
   shaders:
+    # - assets/shaders/anime_fire.frag
     - assets/shaders/fbs_gradient.frag
     - assets/shaders/instanced_shape_morph.frag
+    - assets/shaders/logo_tint.frag
     - assets/shaders/page_curl.frag
     - assets/shaders/parchment_page.frag
     - assets/shaders/shape_morph.frag
