@@ -33,17 +33,28 @@ class OnceUponATime extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [BlocProvider(create: (context) => SettingsCubit())],
-      child: BlocBuilder<SettingsCubit, SettingsState>(
-        builder: (context, state) {
-          return MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            routerConfig: goRouter,
-            // theme: state == Brightness.dark ? darkTheme() : lightTheme(),
-            theme: darkTheme(),
-          );
-        },
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AuthRepository>(create: (_) => AuthRepository()),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) =>
+                AuthCubit(authRepository: context.read<AuthRepository>()),
+          ),
+          BlocProvider(create: (_) => SettingsCubit()),
+        ],
+        child: BlocBuilder<SettingsCubit, SettingsState>(
+          builder: (context, state) {
+            return MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              routerConfig: AppRouter(context).router,
+              // theme: state == Brightness.dark ? darkTheme() : lightTheme(),
+              theme: darkTheme(),
+            );
+          },
+        ),
       ),
     );
   }

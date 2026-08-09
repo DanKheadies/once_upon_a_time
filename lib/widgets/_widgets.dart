@@ -4,6 +4,7 @@ export 'book_layout.dart';
 export 'curling_page.dart';
 export 'custom_app_bar.dart';
 export 'custom_drawer.dart';
+export 'custom_input.dart';
 export 'elapsed_second_clock.dart';
 export 'page_flipper.dart';
 export 'parchment_page.dart';

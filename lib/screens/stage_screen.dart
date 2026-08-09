@@ -1,12 +1,6 @@
-import 'dart:async';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:once_upon_a_time/barrel.dart';
-
-enum GridType { bouncing, chaotic, grid }
 
 class StageScreen extends StatefulWidget {
   const StageScreen({super.key});
@@ -16,41 +10,14 @@ class StageScreen extends StatefulWidget {
 }
 
 class _StageScreenState extends State<StageScreen> {
-  bool hasPixel = false;
-  bool hasShader = false;
-  bool isPixel = true;
-  bool isShader = false;
-  double pixelFactor = 1;
-  GridType gridType = GridType.grid;
-
-  late ui.Image logo;
-  late ui.Image pixelImage;
-  late ShapeInstanceLayout? gridLayout;
-  late ui.FragmentProgram logoProgram;
-  late ui.FragmentProgram pixelProgram;
-  late ui.FragmentProgram shapeProgram;
-  late ui.FragmentShader logoShader;
-  late ui.FragmentShader pixelShader;
-  late ui.FragmentShader shapeShader;
-
-  late final ElapsedSecondsClock clock;
-
+  Size gridDimensions = Size(5, 5);
   @override
   void initState() {
     super.initState();
-
-    loadPixelAssets();
-    loadShaders();
-
-    clock = ElapsedSecondsClock();
   }
 
   @override
   void dispose() {
-    clock.dispose();
-    gridLayout?.dispose();
-    logoShader.dispose();
-    shapeShader.dispose();
     super.dispose();
   }
 
@@ -65,17 +32,7 @@ class _StageScreenState extends State<StageScreen> {
             context.goNamed('home');
           },
         ),
-        actions: [
-          IconButton(
-            icon: Icon(isPixel ? Icons.grid_on : Icons.roller_shades_sharp),
-            onPressed: () {
-              setState(() {
-                isPixel = !isPixel;
-                isShader = !isShader;
-              });
-            },
-          ),
-        ],
+        actions: [IconButton(icon: Icon(Icons.abc), onPressed: () {})],
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -83,199 +40,186 @@ class _StageScreenState extends State<StageScreen> {
             double height = constraints.maxHeight;
             double width = constraints.maxWidth;
 
-            // print('($width, $height)');
+            bool isPortrait = height > width;
+            double dependDimension = isPortrait ? width : height;
 
-            return Stack(
-              children: [
-                BackgroundVeil(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.inverseSurface.withAlpha(100),
-                  height: height,
-                  isReady: hasShader,
-                  width: width,
+            print('($width, $height)');
+            print('dependDimension: $dependDimension');
+
+            return GestureDetector(
+              // onTapMove: (details) {
+              //   print('DERP');
+              // },
+              // onTap: () {
+              //   print('derp');
+              // },
+              // onHorizontalDragUpdate: (details) {
+              //   print('drag hori via global: ${details.globalPosition}');
+              //   // print('drag hor via local: ${details.localPosition}');
+              // },
+              // onVerticalDragUpdate: (details) {
+              //   print('drag vert via vert: ${details.globalPosition}');
+              // },
+              child: Container(
+                height: height,
+                width: width,
+                color: isPortrait ? Colors.red.shade100 : Colors.blue.shade100,
+                child: GridView.count(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  //   // crossAxisCount: (dependDimension / gridDimensions.width)
+                  //   //     .toInt(),
+                  //   crossAxisCount: gridDimensions.width.toInt(),
+                  //   // mainAxisExtent: gridDimensions.height.toInt()
+
+                  // ),
+                  crossAxisCount: gridDimensions.width.toInt(),
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      color: Colors.green.shade100,
+                    ),
+                  ],
+                  // itemBuilder: (context, index) {
+                  //   return Container(
+                  //     width: 100,
+                  //     height: 100,
+                  //     decoration: BoxDecoration(
+                  //       border: BoxBorder.all(color: Colors.black12),
+                  //       color: Colors.green.shade100,
+                  //     ),
+                  //   );
+                  // },
                 ),
-                if (hasPixel && hasShader && isPixel) ...[
-                  PixelateEffect(
-                    shader: pixelShader,
-                    image: pixelImage,
-                    blocksX: width / pixelFactor,
-                    blocksY: height / pixelFactor,
-                  ),
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: Row(
-                      children: [
-                        FloatingActionButton(
-                          heroTag: 'pixelUp',
-                          onPressed: pixelFactor > 1
-                              ? () => setState(() {
-                                  pixelFactor -= 1;
-                                })
-                              : null,
-                          child: Icon(Icons.remove),
-                        ),
-                        const SizedBox(width: 10),
-                        FloatingActionButton(
-                          heroTag: 'pixelDown',
-                          onPressed: pixelFactor <= 100
-                              ? () => setState(() {
-                                  pixelFactor += 1;
-                                })
-                              : null,
-                          child: Icon(Icons.add),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                if (hasShader && isShader) ...[
-                  ShapeGridEffect(layout: gridLayout!, time: clock),
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: FloatingActionButton(
-                      heroTag: 'changeShader',
-                      onPressed: () =>
-                          toggleGridLayout(shapeProgram, logoProgram),
-                      child: Icon(Icons.gas_meter),
-                    ),
-                  ),
-                ],
-              ],
+                // child: Column(
+                //   children: [
+                //     Container(
+                //       width: dependDimension / gridDimensions.width,
+                //       height: dependDimension / gridDimensions.height,
+                //       color: Colors.purple.shade100,
+                //     ),
+                //     // Container(height: 100, color: Colors.green.shade100),
+                //     // Row(
+                //     //   children: [
+                //     //     Container(
+                //     //       width: dependDimension / gridDimensions.width,
+                //     //       height: dependDimension / gridDimensions.height,
+                //     //       color: Colors.green.shade200,
+                //     //     ),
+                //     //     Container(
+                //     //       width: dependDimension / gridDimensions.width,
+                //     //       height: dependDimension / gridDimensions.height,
+                //     //       color: Colors.green.shade100,
+                //     //     ),
+                //     //     Container(
+                //     //       width: dependDimension / gridDimensions.width,
+                //     //       height: dependDimension / gridDimensions.height,
+                //     //       color: Colors.green.shade300,
+                //     //     ),
+                //     //   ],
+                //     // ),
+                //     Row(
+                //       children: [
+                //         SizedBox(
+                //           width: width,
+                //           height: dependDimension / gridDimensions.height,
+                //           child: ListView.builder(
+                //             shrinkWrap: true,
+                //             physics: NeverScrollableScrollPhysics(),
+                //             itemCount: gridDimensions.width.toInt(),
+                //             itemBuilder: (context, index) => Container(
+                //               width: dependDimension / gridDimensions.width,
+                //               height: dependDimension / gridDimensions.height,
+                //               color: index.isEven
+                //                   ? Colors.yellow.shade100
+                //                   : Colors.green.shade100,
+                //             ),
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //     GridUnit(
+                //       color: Colors.amber.shade100,
+                //       id: 'alpha',
+                //       height: 100,
+                //       width: 100,
+                //     ),
+                //     Row(
+                //       mainAxisAlignment: MainAxisAlignment.center,
+                //       children: [
+                //         Container(
+                //           width: 100,
+                //           height: 100,
+                //           color: Colors.pink.shade100,
+                //         ),
+                //         Container(
+                //           width: 100,
+                //           height: 100,
+                //           color: Colors.brown.shade100,
+                //         ),
+                //         // Container(
+                //         //   width: 100,
+                //         //   height: 100,
+                //         //   color: Colors.teal.shade100,
+                //         // ),
+                //         GridUnit(height: 100, id: 'beta', width: 100),
+                //         Container(
+                //           width: 100,
+                //           height: 100,
+                //           color: Colors.orange.shade100,
+                //         ),
+                //         Container(
+                //           width: 100,
+                //           height: 100,
+                //           color: Colors.blueGrey.shade100,
+                //         ),
+                //       ],
+                //     ),
+                //     Container(
+                //       width: 100,
+                //       height: 100,
+                //       color: Colors.lime.shade100,
+                //     ),
+                //   ],
+                // ),
+              ),
             );
           },
         ),
       ),
     );
   }
+}
 
-  Future<void> loadPixelAssets() async {
-    final data = await rootBundle.load('assets/images/castle-colors.jpg');
-    // final image = await decodeUiImage(data.buffer.asUint8List());
-    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-    final frame = await codec.getNextFrame();
-    final image = frame.image;
-    setState(() {
-      pixelImage = image;
-      hasPixel = true;
-    });
-  }
+class GridUnit extends StatelessWidget {
+  final Color? color;
+  final double height;
+  final double width;
+  final String id;
 
-  // /// Decodes raw image bytes into a ui.Image. Keep the returned Image alive
-  // /// for as long as anything is sampling it — same lesson as logoImage.
-  // Future<ui.Image> decodeUiImage(Uint8List bytes) async {
-  //   final codec = await ui.instantiateImageCodec(bytes);
-  //   final frame = await codec.getNextFrame();
-  //   return frame.image;
-  // }
+  const GridUnit({
+    super.key,
+    required this.height,
+    required this.id,
+    required this.width,
+    this.color = Colors.transparent,
+  });
 
-  // /// Convenience loader for a bundled asset.
-  // Future<ui.Image> loadUiImageFromAsset(String assetPath) async {
-  //   final data = await rootBundle.load(assetPath);
-  //   return decodeUiImage(data.buffer.asUint8List());
-  // }
-
-  Future<void> loadShaders() async {
-    final logoFragProgram = await ui.FragmentProgram.fromAsset(
-      'assets/shaders/logo_tint.frag',
-    );
-    final pixelFragProgram = await ui.FragmentProgram.fromAsset(
-      'assets/shaders/pixelate.frag',
-    );
-    final shapeFragProgram = await ui.FragmentProgram.fromAsset(
-      'assets/shaders/instanced_shape_morph.frag',
-    );
-
-    final logoImage = await ShapeInstanceLayout.rasterizeTextLogo('DVD');
-
-    setState(() {
-      gridLayout = ShapeInstanceLayout.bouncing(
-        program: logoFragProgram,
-        logoImage: logoImage,
-        count: 13,
-      );
-      // gridLayout = ShapeInstanceLayout.grid(
-      //   program: shapeFragProgram,
-      //   columns: 10,
-      //   rows: 10,
-      //   instanceScale: 12,
-      // );
-      // gridLayout = ShapeInstanceLayout.chaotic(
-      //   program: shapeFragProgram,
-      //   count: 69,
-      //   instanceScale: 12,
-      // );
-      logo = logoImage;
-      logoProgram = logoFragProgram;
-      logoShader = logoFragProgram.fragmentShader();
-      pixelProgram = pixelFragProgram;
-      pixelShader = pixelFragProgram.fragmentShader();
-      shapeProgram = shapeFragProgram;
-      shapeShader = shapeFragProgram.fragmentShader();
-      hasShader = true;
-    });
-  }
-
-  Future<void> toggleGridLayout(
-    ui.FragmentProgram generalProgram,
-    ui.FragmentProgram logoProgram,
-  ) async {
-    if (gridType == GridType.bouncing) {
-      setState(() {
-        gridLayout = ShapeInstanceLayout.chaotic(
-          program: generalProgram,
-          count: 69,
-          // shapeColor: Colors.black,
-          // backgroundColor: Colors.white,
-          shapeColor: Colors.white,
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        // TODO: visual (light up, depress, etc), track by id, timers, et al.
+        print(
+          'id: $id${color != Colors.transparent ? ' (color: ${color.toString()})' : ''}',
         );
-        gridType = GridType.chaotic;
-      });
-    } else if (gridType == GridType.chaotic) {
-      setState(() {
-        gridLayout = ShapeInstanceLayout.grid(
-          program: generalProgram,
-          columns: 10,
-          rows: 10,
-          shapeColor: const Color(0xFF3AA6FF),
-          // backgroundColor defaults to transparent
-        );
-        gridType = GridType.grid;
-      });
-    } else if (gridType == GridType.grid) {
-      // Note: the DVD example (95% of the time) shows for a split second and
-      // then disappears. Something is destroying the image (most likely), but
-      // it's not worth nailing. This was for fun, not results.
-      setState(() {
-        gridLayout = ShapeInstanceLayout.bouncing(
-          program: logoProgram,
-          logoImage: logo,
-          count: 20,
-          instanceScale: 16,
-          minSpeed: 0.08,
-          maxSpeed: 0.22,
-          shapeColor: Colors.cyan,
-        );
-        gridType = GridType.bouncing;
-      });
-    }
-
-    // ShapeInstanceLayout.grid(
-    //   program: program,
-    //   columns: 10,
-    //   rows: 10,
-    //   shapeColor: const Color(0xFF3AA6FF),
-    //   // backgroundColor defaults to transparent
-    // );
-    // ShapeInstanceLayout.bouncing(
-    //   program: program,
-    //   count: 20,
-    //   instanceScale: 16,
-    //   minSpeed: 0.08,
-    //   maxSpeed: 0.22,
-    //   shapeColor: Colors.cyan,
-    // );
+      },
+      // onHorizontalDragUpdate: (details) {
+      //   print('drag @ $id');
+      // },
+      child: Container(height: height, width: width, color: color),
+    );
   }
 }
