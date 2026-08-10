@@ -31,6 +31,12 @@ ThemeData darkTheme() {
       onSurface: white500,
       inverseSurface: black500,
     ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: gold700,
+        foregroundColor: black500,
+      ),
+    ),
     // textTheme: TextTheme(),
   );
 }

@@ -14,7 +14,6 @@ class ContactScreen extends StatefulWidget {
 }
 
 class _ContactScreenState extends State<ContactScreen> {
-  bool clearInput = false;
   ContactStatus status = ContactStatus.initial;
   TextEditingController emailCont = TextEditingController();
   TextEditingController messageCont = TextEditingController();
@@ -24,7 +23,7 @@ class _ContactScreenState extends State<ContactScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(isPortrait: true),
-      endDrawer: CustomDrawer(isMain: false),
+      endDrawer: CustomDrawer(isStorybook: false),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -42,66 +41,71 @@ class _ContactScreenState extends State<ContactScreen> {
                   : Container(
                       padding: const EdgeInsets.all(25),
                       width: width < 850 ? width : 500,
-                      child: Column(
-                        children: [
-                          Texxt(
-                            'Need to reach us?',
-                            // style: Theme.of(context).textTheme.displaySmall!
-                            //     .copyWith(
-                            //       color: Theme.of(context).colorScheme.surface,
-                            //     ),
-                          ),
-                          const SizedBox(height: 25),
-                          CustomInput(
-                            cont: nameCont,
-                            labelText: 'Name',
-                            onChanged: (value) {
-                              setState(() {
-                                nameCont.text = value;
-                              });
-                            },
-                            onEnter: (_) {},
-                          ),
-                          const SizedBox(height: 15),
-                          CustomInput(
-                            cont: emailCont,
-                            labelText: 'Email',
-                            onChanged: (value) {
-                              setState(() {
-                                emailCont.text = value;
-                              });
-                            },
-                            onEnter: (_) {},
-                          ),
-                          const SizedBox(height: 15),
-                          CustomInput(
-                            cont: messageCont,
-                            isMulti: true,
-                            labelText: 'Message',
-                            onChanged: (value) {
-                              setState(() {
-                                messageCont.text = value;
-                              });
-                            },
-                            onEnter: (_) {},
-                          ),
-                          const SizedBox(height: 40),
-                          status == ContactStatus.submittting
-                              ? const Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: SizedBox(
-                                    height: 35,
-                                    child: CircularProgressIndicator(),
+                      child: SingleChildScrollView(
+                        physics: NeverScrollableScrollPhysics(),
+                        child: Column(
+                          children: [
+                            Texxt(
+                              'Need to reach us?',
+                              // style: Theme.of(context).textTheme.displaySmall!
+                              //     .copyWith(
+                              //       color: Theme.of(context).colorScheme.surface,
+                              //     ),
+                              useDark: false,
+                            ),
+                            const SizedBox(height: 25),
+                            CustomInput(
+                              cont: nameCont,
+                              labelText: 'Name',
+                              onChanged: (value) {
+                                setState(() {
+                                  nameCont.text = value;
+                                });
+                              },
+                              onEnter: (_) {},
+                            ),
+                            const SizedBox(height: 15),
+                            CustomInput(
+                              cont: emailCont,
+                              labelText: 'Email',
+                              onChanged: (value) {
+                                setState(() {
+                                  emailCont.text = value;
+                                });
+                              },
+                              onEnter: (_) {},
+                            ),
+                            const SizedBox(height: 15),
+                            CustomInput(
+                              cont: messageCont,
+                              isMulti: true,
+                              labelText: 'Message',
+                              onChanged: (value) {
+                                setState(() {
+                                  messageCont.text = value;
+                                });
+                              },
+                              onEnter: (_) {},
+                            ),
+                            const SizedBox(height: 40),
+                            status == ContactStatus.submittting
+                                ? const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: SizedBox(
+                                      height: 35,
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  )
+                                : ElevatedButton(
+                                    onPressed:
+                                        status == ContactStatus.submittting
+                                        ? null
+                                        : () => submit(context),
+                                    child: Text('Send'),
                                   ),
-                                )
-                              : ElevatedButton(
-                                  onPressed: status == ContactStatus.submittting
-                                      ? null
-                                      : () => submit(context),
-                                  child: Text('Send'),
-                                ),
-                          const SizedBox(height: 40),
-                        ],
+                            const SizedBox(height: 40),
+                          ],
+                        ),
                       ),
                     ),
             );

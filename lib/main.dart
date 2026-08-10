@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+// import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:once_upon_a_time/barrel.dart';
@@ -22,6 +23,9 @@ Future<void> main() async {
   // SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // Bloc.observer = SimpleBlocObserver();
 
+  // TODO: implement if (hosted) browser behaves weird, i.e. refreshing
+  // usePathUrlStrategy();
+
   SystemChannels.textInput.invokeMethod('TextInput.hide');
 
   runApp(const OnceUponATime());
@@ -36,6 +40,9 @@ class OnceUponATime extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>(create: (_) => AuthRepository()),
+        RepositoryProvider<DatabaseRepository>(
+          create: (_) => DatabaseRepository(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -44,17 +51,13 @@ class OnceUponATime extends StatelessWidget {
                 AuthCubit(authRepository: context.read<AuthRepository>()),
           ),
           BlocProvider(create: (_) => SettingsCubit()),
+          BlocProvider(
+            create: (context) => StoryBloc(
+              databaseRepository: context.read<DatabaseRepository>(),
+            ),
+          ),
         ],
-        child: BlocBuilder<SettingsCubit, SettingsState>(
-          builder: (context, state) {
-            return MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              routerConfig: AppRouter(context).router,
-              // theme: state == Brightness.dark ? darkTheme() : lightTheme(),
-              theme: darkTheme(),
-            );
-          },
-        ),
+        child: OnceUponATimeApp(),
       ),
     );
   }

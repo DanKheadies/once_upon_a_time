@@ -13,8 +13,8 @@ class CustomInput extends StatefulWidget {
   const CustomInput({
     super.key,
     required this.labelText,
-    required this.onChanged,
-    required this.onEnter,
+    this.onChanged,
+    this.onEnter,
     this.cont,
     this.initialValue = '',
     this.isMulti = false,
@@ -63,7 +63,16 @@ class _CustomInputState extends State<CustomInput> {
       textCapitalization: widget.isMulti!
           ? TextCapitalization.sentences
           : TextCapitalization.none,
-      onChanged: widget.onChanged,
+      // onChanged: widget.onChanged,
+      onChanged: (value) {
+        controller.selection = TextSelection(
+          baseOffset: controller.text.length,
+          extentOffset: controller.text.length,
+        );
+        if (widget.onChanged != null) {
+          widget.onChanged!(value);
+        }
+      },
       onSubmitted: widget.onEnter,
       decoration: InputDecoration(
         labelText: widget.labelText,

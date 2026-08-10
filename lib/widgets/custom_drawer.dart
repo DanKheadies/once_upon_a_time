@@ -4,10 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
 class CustomDrawer extends StatelessWidget {
-  final bool? isMain;
+  final bool? isStorybook;
   final Function()? resetStory;
 
-  const CustomDrawer({super.key, this.isMain = true, this.resetStory});
+  const CustomDrawer({super.key, this.isStorybook = true, this.resetStory});
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,7 @@ class CustomDrawer extends StatelessWidget {
             child: Texxt('Once Upon a Time', isOlde: true, useDark: false),
           ),
           const SizedBox(height: 15),
-          if (isMain!) ...[
+          if (isStorybook!) ...[
             ListTile(
               title: Text(
                 'Solve Story',
@@ -163,10 +163,10 @@ class CustomDrawer extends StatelessWidget {
               hoverColor: Theme.of(context).colorScheme.primary.withAlpha(30),
             ),
           ],
-          if (!isMain!) ...[
+          if (!isStorybook!) ...[
             ListTile(
               title: Text(
-                'Story',
+                'Storybook',
                 style: TextStyle(
                   fontSize: 18,
                   color: Theme.of(context).colorScheme.primary,

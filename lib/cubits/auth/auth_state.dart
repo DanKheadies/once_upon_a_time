@@ -6,17 +6,28 @@ class AuthState extends Equatable {
   final auth.User? authUser;
   final AuthStatus status;
   final DateTime? lastUpdate;
+  final String? email;
   final String? errorMessage;
+  final String? password;
 
   const AuthState({
     this.authUser,
+    this.email,
     this.errorMessage,
     this.lastUpdate,
+    this.password,
     this.status = AuthStatus.unknown,
   });
 
   @override
-  List<Object?> get props => [authUser, errorMessage, lastUpdate, status];
+  List<Object?> get props => [
+    authUser,
+    email,
+    errorMessage,
+    lastUpdate,
+    password,
+    status,
+  ];
 
   factory AuthState.initial() {
     return const AuthState();
@@ -26,12 +37,16 @@ class AuthState extends Equatable {
     auth.User? authUser,
     AuthStatus? status,
     DateTime? lastUpdate,
+    String? email,
     String? errorMessage,
+    String? password,
   }) {
     return AuthState(
       authUser: authUser ?? this.authUser,
+      email: email ?? this.email,
       errorMessage: errorMessage ?? this.errorMessage,
       lastUpdate: lastUpdate ?? this.lastUpdate,
+      password: password ?? this.password,
       status: status ?? this.status,
     );
   }
@@ -50,6 +65,7 @@ class AuthState extends Equatable {
     }
 
     return AuthState(
+      email: json['email'],
       errorMessage: json['errorMessage'],
       lastUpdate: updatedTime,
       status: AuthStatus.values.firstWhere(
@@ -62,6 +78,7 @@ class AuthState extends Equatable {
     DateTime lastDT = lastUpdate ?? DateTime.now();
 
     return {
+      'email': email,
       'errorMessage': errorMessage,
       'lastUpdate': lastDT.toUtc().toString(),
       'status': status.name,

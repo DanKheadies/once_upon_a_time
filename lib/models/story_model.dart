@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 class Story extends Equatable {
-  final DateTime createdOn;
-  final DateTime updatedOn;
+  final bool? isDeleted;
+  final DateTime? createdOn;
+  final DateTime? updatedOn;
   final List<String> chapters;
   final List<String> pov;
   final List<String>? povHints;
@@ -14,17 +16,114 @@ class Story extends Equatable {
   const Story({
     required this.chapters,
     required this.createdBy,
-    required this.createdOn,
     required this.id,
     required this.pov,
     required this.title,
-    required this.updatedOn,
+    this.createdOn,
+    this.isDeleted = false,
     this.povHints = const [],
     this.titleHints = const [],
+    this.updatedOn,
   });
 
   @override
-  List<Object?> get props => [chapters, id, pov, povHints, title, titleHints];
+  List<Object?> get props => [
+    chapters,
+    createdBy,
+    createdOn,
+    id,
+    isDeleted,
+    pov,
+    povHints,
+    title,
+    titleHints,
+    updatedOn,
+  ];
+
+  Story copyWith({
+    bool? isDeleted,
+    DateTime? createdOn,
+    DateTime? updatedOn,
+    List<String>? chapters,
+    List<String>? pov,
+    List<String>? povHints,
+    List<String>? titleHints,
+    String? createdBy,
+    String? id,
+    String? title,
+  }) {
+    return Story(
+      chapters: chapters ?? this.chapters,
+      createdBy: createdBy ?? this.createdBy,
+      createdOn: createdOn ?? this.createdOn,
+      id: id ?? this.id,
+      isDeleted: isDeleted ?? this.isDeleted,
+      pov: pov ?? this.pov,
+      povHints: povHints ?? this.povHints,
+      title: title ?? this.title,
+      titleHints: titleHints ?? this.titleHints,
+      updatedOn: updatedOn ?? this.updatedOn,
+    );
+  }
+
+  factory Story.fromSnapshot(DocumentSnapshot snap) {
+    dynamic data = snap.data();
+
+    return Story.fromJson(data).copyWith(id: snap.id);
+  }
+
+  factory Story.fromJson(Map<String, dynamic> json) {
+    DateTime? createdOnDT = json['createdOn'] != null
+        ? DateTime.tryParse(json['createdOn'])
+        : null;
+    DateTime? updatedOnDT = json['updatedOn'] != null
+        ? DateTime.tryParse(json['updatedOn'])
+        : null;
+
+    return Story(
+      chapters: (json['chapters'] as List)
+          .map((chapter) => chapter as String)
+          .toList(),
+      createdBy: json['createdBy'],
+      createdOn: createdOnDT,
+      id: json['id'],
+      isDeleted: json['isDeleted'],
+      pov: (json['pov'] as List).map((view) => view as String).toList(),
+      povHints: json['povHints'] != null
+          ? (json['povHints'] as List).map((hint) => hint as String).toList()
+          : null,
+      title: json['title'],
+      titleHints: json['titleHints'] != null
+          ? (json['titleHints'] as List).map((hint) => hint as String).toList()
+          : null,
+      updatedOn: updatedOnDT,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'chapters': chapters,
+      'createdBy': createdBy,
+      'createdOn': createdOn?.toUtc().toString(),
+      'id': id,
+      'isDeleted': isDeleted,
+      'pov': pov,
+      'povHints': povHints,
+      'title': title,
+      'titleHints': titleHints,
+      'updatedOn': updatedOn?.toUtc().toString(),
+    };
+  }
+
+  static const Story emptyStory = Story(
+    chapters: [],
+    createdBy: '',
+    // createdOn: DateTime.now(),
+    id: '',
+    pov: [],
+    title: '',
+    // updatedOn: DateTime.now(),
+  );
 
   static final Story storyExample1 = Story(
     id: '12345678900',

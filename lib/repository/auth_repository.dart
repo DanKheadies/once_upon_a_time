@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:logger/web.dart';
-import 'package:once_upon_a_time/barrel.dart';
+// import 'package:once_upon_a_time/barrel.dart';
 
 class AuthRepository {
   final auth.FirebaseAuth _firebaseAuth;
@@ -30,21 +30,21 @@ class AuthRepository {
   /// A stream for Firebase's user changes.
   Stream<auth.User?> get user => _firebaseAuth.userChanges();
 
-  /// Registers the user with Firebase (for developers only).
-  Future<auth.User?> devRegisterUser() async {
-    try {
-      final userCredentials = await _firebaseAuth
-          .createUserWithEmailAndPassword(
-            email: secretUserEmail,
-            password: secretUserPassword,
-          );
+  // /// Registers the user with Firebase (for developers only).
+  // Future<auth.User?> devRegisterUser() async {
+  //   try {
+  //     final userCredentials = await _firebaseAuth
+  //         .createUserWithEmailAndPassword(
+  //           email: secretUserEmail,
+  //           password: secretUserPassword,
+  //         );
 
-      return userCredentials.user;
-    } catch (err) {
-      _log.e('register error', error: err);
-      throw Exception(err);
-    }
-  }
+  //     return userCredentials.user;
+  //   } catch (err) {
+  //     _log.e('register error', error: err);
+  //     throw Exception(err);
+  //   }
+  // }
 
   /// Authenticate with Firebase's email-password.
   Future<auth.User?> loginWithFirebase({
