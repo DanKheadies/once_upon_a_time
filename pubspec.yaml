@@ -26,6 +26,8 @@ dependencies:
   logger: ^2.7.0
   path_provider: ^2.1.6
   video_player: ^2.13.0
+  vph_web_date_picker: ^0.1.12
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:

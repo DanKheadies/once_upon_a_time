@@ -9,6 +9,7 @@ class AuthState extends Equatable {
   final String? email;
   final String? errorMessage;
   final String? password;
+  final String? uid;
 
   const AuthState({
     this.authUser,
@@ -17,6 +18,7 @@ class AuthState extends Equatable {
     this.lastUpdate,
     this.password,
     this.status = AuthStatus.unknown,
+    this.uid,
   });
 
   @override
@@ -27,6 +29,7 @@ class AuthState extends Equatable {
     lastUpdate,
     password,
     status,
+    uid,
   ];
 
   factory AuthState.initial() {
@@ -40,6 +43,7 @@ class AuthState extends Equatable {
     String? email,
     String? errorMessage,
     String? password,
+    String? uid,
   }) {
     return AuthState(
       authUser: authUser ?? this.authUser,
@@ -48,6 +52,7 @@ class AuthState extends Equatable {
       lastUpdate: lastUpdate ?? this.lastUpdate,
       password: password ?? this.password,
       status: status ?? this.status,
+      uid: uid ?? this.uid,
     );
   }
 
@@ -71,6 +76,7 @@ class AuthState extends Equatable {
       status: AuthStatus.values.firstWhere(
         (status) => status.name.toString() == json['status'],
       ),
+      uid: json['uid'],
     );
   }
 
@@ -82,6 +88,7 @@ class AuthState extends Equatable {
       'errorMessage': errorMessage,
       'lastUpdate': lastDT.toUtc().toString(),
       'status': status.name,
+      'uid': uid,
     };
   }
 }

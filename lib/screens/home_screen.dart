@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int chapterIndex = 0;
   int checkpointIndex = 0;
   int parchmentSeed = 0;
-  List<String> story = [];
+  // List<String> story = [];
 
   final GlobalKey<PageFlipperState> storybookKey = GlobalKey();
 
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     scrollTimer = Timer(Duration.zero, () {});
 
-    story = Story.storyExample1.chapters;
+    // story = Story.storyExample1.chapters;
   }
 
   @override
@@ -80,157 +80,193 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Size size = MediaQuery.of(context).size;
     bool isPortrait = size.height > size.width; // TODO: a better way for this
 
-    return Scaffold(
-      appBar: CustomAppBar(isPortrait: isPortrait),
-      endDrawer: CustomDrawer(resetStory: resetStory),
-      floatingActionButton: AnimatedOpacity(
-        opacity: isOpened ? 1 : 0,
-        duration: Duration(milliseconds: 500),
-        child: BlocBuilder<SettingsCubit, SettingsState>(
-          builder: (context, state) {
-            return state.showActionButtons
-                ? buildStorybookActions()
-                : const SizedBox();
-          },
-        ),
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            double height = constraints.maxHeight;
-            double width = constraints.maxWidth;
-            BookLayout layout = computeBookLayout(
-              screenSafeWidth: width,
-              screenSafeHeight: height,
+    return BlocListener<StoryBloc, StoryState>(
+      listenWhen: (previous, current) =>
+          previous.currentStory.id != current.currentStory.id,
+      listener: (context, state) {
+        print('storyBlocListener triggered');
+        resetStory();
+      },
+      child: BlocBuilder<StoryBloc, StoryState>(
+        builder: (context, state) {
+          if (state.status == StoryStateStatus.loading) {
+            return Scaffold(
+              appBar: CustomAppBar(isPortrait: isPortrait),
+              endDrawer: CustomDrawer(resetStory: resetStory),
+              // TODO
+              body: SafeArea(child: Center(child: CircularProgressIndicator())),
             );
+          }
+          return Scaffold(
+            appBar: CustomAppBar(isPortrait: isPortrait),
+            endDrawer: CustomDrawer(resetStory: resetStory),
+            floatingActionButton: AnimatedOpacity(
+              opacity: isOpened ? 1 : 0,
+              duration: Duration(milliseconds: 500),
+              child: BlocBuilder<SettingsCubit, SettingsState>(
+                builder: (_, settingsState) {
+                  return settingsState.showActionButtons
+                      ? buildStorybookActions(state.currentStory.chapters)
+                      : const SizedBox();
+                },
+              ),
+            ),
+            body: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  double height = constraints.maxHeight;
+                  double width = constraints.maxWidth;
+                  BookLayout layout = computeBookLayout(
+                    screenSafeWidth: width,
+                    screenSafeHeight: height,
+                  );
 
-            return Stack(
-              children: [
-                Transform.flip(
-                  flipX: true,
-                  child: BackgroundVideo(
-                    isInitialized: () {
-                      setState(() {
-                        isVideoInitialized = true;
-                      });
-                    },
-                  ),
-                ),
-                ...buildBackgroundVeil(
-                  context,
-                  Theme.of(context).colorScheme.inverseSurface.withAlpha(100),
-                  height,
-                  width,
-                ),
-                Center(
-                  child: AnimatedBuilder(
-                    animation: entrance,
-                    builder: (context, child) {
-                      final slide = Curves.easeOutBack.transform(
-                        entrance.value,
-                      );
-                      return Transform.translate(
-                        offset: Offset(0, (1 - slide) * -300),
-                        child: child,
-                      );
-                    },
-                    child: Storybook(
-                      width: width,
-                      height: height,
-                      frontCover: Container(
-                        alignment: Alignment.centerLeft,
-                        margin: const EdgeInsets.only(right: 25),
-                        child: Image.asset(
-                          'assets/images/storybook-cover.png',
-                          scale: 0.1,
+                  return Stack(
+                    children: [
+                      Transform.flip(
+                        flipX: true,
+                        child: BackgroundVideo(
+                          isInitialized: () {
+                            setState(() {
+                              isVideoInitialized = true;
+                            });
+                          },
                         ),
                       ),
-                      pages: const SizedBox(),
-                      onOpened: () {
-                        setState(() {
-                          isOpened = true;
-                        });
-                        initializeScrollTimer();
-                      },
-                    ),
-                  ),
-                ),
-                if (isOpened && hasShader) ...[
-                  PageFlipper(
-                    key: storybookKey,
-                    canFlip: canProceed,
-                    width: width,
-                    height: height,
-                    layout: layout,
-                    spineOffset: layout.spineOffset,
-                    pageCount: story.length,
-                    pageBuilder:
-                        (context, index, isVisible, goingBack, showText) =>
-                            ParchmentPage(
-                              width: layout.pageWidth,
-                              height: layout.pageHeight,
-                              seed: index,
-                              shader: pageShader,
-                              fadeStart: 0.0,
-                              fadeEnd: layout.fadeEnd,
-                              layout: layout,
-                              child: isVisible && showText
-                                  ? buildChapterText(layout, showText, index)
-                                  : const SizedBox(),
-                            ),
-                    onPageChanged: (value) {
-                      // print('onPageChanged: Page ${value + 1}');
-                      setState(() {
-                        // scrollController.jumpTo(0);
-                        scrollController.dispose();
-                        scrollController = ScrollController();
-
-                        canProceed = value < checkpointIndex;
-                        chapterIndex = value;
-                        checkpointIndex = value > checkpointIndex
-                            ? value
-                            : checkpointIndex;
-
-                        textController.play();
-                      });
-
-                      initializeScrollTimer();
-                    },
-                    onPageTap: () {
-                      // print('onPageTap!');
-                      setState(() {
-                        textController.pause();
-                        canProceed = true;
-                      });
-                    },
-                  ),
-                ],
-                !isPortrait
-                    ? Positioned(
-                        right: 10,
-                        top: 10,
-                        child: FloatingActionButton(
-                          heroTag: 'prevChp',
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadiusGeometry.circular(100),
-                          ),
-                          onPressed: () {
-                            Scaffold.of(context).openEndDrawer();
+                      ...buildBackgroundVeil(
+                        context,
+                        Theme.of(
+                          context,
+                        ).colorScheme.inverseSurface.withAlpha(100),
+                        height,
+                        width,
+                      ),
+                      Center(
+                        child: AnimatedBuilder(
+                          animation: entrance,
+                          builder: (context, child) {
+                            final slide = Curves.easeOutBack.transform(
+                              entrance.value,
+                            );
+                            return Transform.translate(
+                              offset: Offset(0, (1 - slide) * -300),
+                              child: child,
+                            );
                           },
-                          child: Transform.flip(
-                            flipX: true,
-                            child: Icon(
-                              Icons.menu_book,
-                              color: Theme.of(context).colorScheme.onPrimary,
+                          child: Storybook(
+                            width: width,
+                            height: height,
+                            frontCover: Container(
+                              alignment: Alignment.centerLeft,
+                              margin: const EdgeInsets.only(right: 25),
+                              child: Image.asset(
+                                'assets/images/storybook-cover.png',
+                                scale: 0.1,
+                              ),
                             ),
+                            pages: const SizedBox(),
+                            onOpened: () {
+                              setState(() {
+                                isOpened = true;
+                              });
+                              initializeScrollTimer();
+                            },
                           ),
                         ),
-                      )
-                    : const SizedBox(),
-              ],
-            );
-          },
-        ),
+                      ),
+                      if (isOpened && hasShader) ...[
+                        PageFlipper(
+                          key: storybookKey,
+                          canFlip: canProceed,
+                          width: width,
+                          height: height,
+                          layout: layout,
+                          spineOffset: layout.spineOffset,
+                          pageCount: state.currentStory.chapters.length,
+                          pageBuilder:
+                              (
+                                context,
+                                index,
+                                isVisible,
+                                goingBack,
+                                showText,
+                              ) => ParchmentPage(
+                                width: layout.pageWidth,
+                                height: layout.pageHeight,
+                                seed: index,
+                                shader: pageShader,
+                                fadeStart: 0.0,
+                                fadeEnd: layout.fadeEnd,
+                                layout: layout,
+                                child: isVisible && showText
+                                    ? buildChapterText(
+                                        layout,
+                                        showText,
+                                        index,
+                                        state.currentStory.chapters,
+                                      )
+                                    : const SizedBox(),
+                              ),
+                          onPageChanged: (value) {
+                            // print('onPageChanged: Page ${value + 1}');
+                            setState(() {
+                              // scrollController.jumpTo(0);
+                              scrollController.dispose();
+                              scrollController = ScrollController();
+
+                              canProceed = value < checkpointIndex;
+                              chapterIndex = value;
+                              checkpointIndex = value > checkpointIndex
+                                  ? value
+                                  : checkpointIndex;
+
+                              textController.play();
+                            });
+
+                            initializeScrollTimer();
+                          },
+                          onPageTap: () {
+                            // print('onPageTap!');
+                            setState(() {
+                              textController.pause();
+                              canProceed = true;
+                            });
+                          },
+                        ),
+                      ],
+                      !isPortrait
+                          ? Positioned(
+                              right: 10,
+                              top: 10,
+                              child: FloatingActionButton(
+                                heroTag: 'prevChp',
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadiusGeometry.circular(
+                                    100,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Scaffold.of(context).openEndDrawer();
+                                },
+                                child: Transform.flip(
+                                  flipX: true,
+                                  child: Icon(
+                                    Icons.menu_book,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const SizedBox(),
+                    ],
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -356,8 +392,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void resetStory() {
-    // print('reset story');
+    print('reset story');
     setState(() {
+      // entrance.reset();
       textController.pause();
       scrollController.dispose();
       scrollController = ScrollController();
@@ -371,8 +408,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     initializeScrollTimer();
   }
 
-  Widget buildChapterText(BookLayout layout, bool showText, int index) {
-    String chapterText = story[index]
+  Widget buildChapterText(
+    BookLayout layout,
+    bool showText,
+    int index,
+    List<String> chapters,
+  ) {
+    // TODO: how does user input handle?
+    String chapterText = chapters[index]
         .replaceAll('. ', '.\n\n')
         .replaceAll('! ', '!\n\n')
         .replaceAll('? ', '?\n\n');
@@ -436,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget buildStorybookActions() {
+  Widget buildStorybookActions(List<String> chapters) {
     return Container(
       padding: const EdgeInsets.only(left: 30),
       child: Row(
@@ -486,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
             ),
           ),
-          chapterIndex + 1 >= story.length
+          chapterIndex + 1 >= chapters.length
               ? emptyFlaction()
               : FloatingActionButton(
                   heroTag: 'goOn',
@@ -496,8 +539,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   onPressed: !canProceed
                       ? null
                       : () {
-                          // print('go on');
-                          if (chapterIndex + 1 < story.length) {
+                          if (chapterIndex + 1 < chapters.length) {
                             setState(() {
                               scrollController.jumpTo(0);
                               chapterIndex += 1;

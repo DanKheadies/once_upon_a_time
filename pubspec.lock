@@ -360,6 +360,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.9.1"
+  intl:
+    dependency: "direct main"
+    description:
+      name: intl
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.3"
   isolate_channel:
     dependency: transitive
     description:
@@ -560,6 +568,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.2"
+  pixel_snap:
+    dependency: transitive
+    description:
+      name: pixel_snap
+      sha256: "677410ea37b07cd37ecb6d5e6c0d8d7615a7cf3bd92ba406fd1ac57e937d1fb0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.5"
   platform:
     dependency: transitive
     description:
@@ -733,6 +749,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "15.2.0"
+  vph_common_widgets:
+    dependency: transitive
+    description:
+      name: vph_common_widgets
+      sha256: "596f6655cd67d3aba8f81e77d2c5148d86378c4f19469acf06afc84009606c09"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.3"
+  vph_web_date_picker:
+    dependency: "direct main"
+    description:
+      name: vph_web_date_picker
+      sha256: "0e7011833cf8b4b19b5998a20ec44cbc97cfa8b397477b50509fa2df9b046e7b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.12"
   web:
     dependency: transitive
     description:

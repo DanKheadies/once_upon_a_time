@@ -87,7 +87,14 @@ class CustomDrawer extends StatelessWidget {
                 Icons.auto_mode,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              onTap: () => print('TODO: New'),
+              onTap: () {
+                context.read<StoryBloc>().add(
+                  NewStory(
+                    storyId: context.read<StoryBloc>().state.currentStory.id,
+                  ),
+                );
+                Navigator.of(context).pop();
+              },
               hoverColor: Theme.of(context).colorScheme.primary.withAlpha(30),
             ),
             ListTile(

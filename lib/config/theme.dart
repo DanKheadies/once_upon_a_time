@@ -31,6 +31,7 @@ ThemeData darkTheme() {
       onSurface: white500,
       inverseSurface: black500,
     ),
+    dialogTheme: DialogThemeData(backgroundColor: black400),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: gold700,

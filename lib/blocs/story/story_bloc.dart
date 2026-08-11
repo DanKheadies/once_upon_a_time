@@ -17,7 +17,11 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
       super(StoryState()) {
     on<CreateStory>(_onCreateStory);
     on<GetStories>(_onGetStories);
+    on<NewStory>(_onNewStory);
     on<UpdateNewStory>(_onUpdateNewStory);
+
+    print('StoryBloc online');
+    add(GetStories());
   }
 
   Future<void> _onCreateStory(
@@ -25,24 +29,44 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
     Emitter<StoryState> emit,
   ) async {
     if (state.status == StoryStateStatus.updating) return;
-    emit(state.copyWith(status: StoryStateStatus.updating));
+    emit(state.copyWith(errorMessage: '', status: StoryStateStatus.updating));
 
-    List<Story> storiesList = [];
-    Story activeStory = Story.emptyStory;
-
-    // TODO: create / add story to Firebase
-    try {
-      storiesList = await databaseRepository.getStories();
-      storiesList.sort((a, b) => a.title.compareTo(b.title));
-      // Remove "deleted" stories.
-      storiesList.removeWhere((area) => area.isDeleted == true);
-      int index = Random().nextInt(storiesList.length);
-      if (index >= 0) {
-        activeStory = storiesList[index];
-      }
+    if (event.newStory.chapters.isEmpty ||
+        state.newStory.pov.isEmpty ||
+        state.newStory.title == '') {
       emit(
         state.copyWith(
-          currentStory: activeStory,
+          errorMessage: event.newStory.title == ''
+              ? 'Add a title..'
+              : event.newStory.pov.isEmpty
+              ? 'Add a POV..'
+              : event.newStory.chapters.isEmpty
+              ? 'Add chapters..'
+              : 'Something went wrong.',
+          status: StoryStateStatus.error,
+        ),
+      );
+      return;
+    }
+
+    DateTime now = DateTime.now();
+    List<Story> storiesList = state.stories.toList();
+    Story newStory = Story.emptyStory;
+
+    try {
+      newStory = await databaseRepository.createStory(
+        newStory: event.newStory.copyWith(
+          createdOn: event.newStory.createdOn ?? now,
+          updatedOn: now,
+        ),
+      );
+      storiesList.add(newStory);
+      storiesList.sort((a, b) => a.title.compareTo(b.title));
+
+      emit(
+        state.copyWith(
+          // currentStory: activeStory,
+          newStory: Story.emptyStory,
           status: StoryStateStatus.updated,
           stories: storiesList,
         ),
@@ -57,10 +81,47 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
     if (state.status == StoryStateStatus.loading) return;
     emit(state.copyWith(status: StoryStateStatus.loading));
 
-    // TODO: get stories from firebase
+    List<Story> storiesList = [];
+    Story activeStory = Story.emptyStory;
+
+    try {
+      storiesList = await databaseRepository.getStories(event.showArchived);
+      storiesList.sort((a, b) => a.title.compareTo(b.title));
+
+      int index = Random().nextInt(storiesList.length);
+      if (index >= 0) {
+        activeStory = storiesList[index];
+      }
+
+      emit(
+        state.copyWith(
+          currentStory: activeStory,
+          status: StoryStateStatus.loaded,
+          stories: storiesList,
+        ),
+      );
+    } catch (err) {
+      log.e('GetStories error', error: err);
+      emit(state.copyWith(status: StoryStateStatus.error));
+    }
   }
 
-  void _onUpdateNewStory(UpdateNewStory event, Emitter<StoryState> emit) async {
+  void _onNewStory(NewStory event, Emitter<StoryState> emit) {
+    List<Story> storiesList = state.stories.toList();
+    int index = storiesList.indexWhere((story) => story.id == event.storyId);
+    Story newStory = Story.emptyStory;
+
+    if (index >= 0) {
+      storiesList.removeAt(index);
+      int randoIndex = Random().nextInt(storiesList.length);
+      newStory = storiesList[randoIndex];
+      print('new current: ${newStory.title}');
+    }
+
+    emit(state.copyWith(currentStory: newStory));
+  }
+
+  void _onUpdateNewStory(UpdateNewStory event, Emitter<StoryState> emit) {
     emit(state.copyWith(newStory: event.newStory));
   }
 

@@ -8,29 +8,30 @@ sealed class StoryEvent extends Equatable {
 }
 
 class CreateStory extends StoryEvent {
-  final List<String>? chapters;
-  final List<String>? pov;
-  final List<String>? povHints;
-  final List<String>? titleHints;
-  final String? title;
+  final Story newStory;
 
-  const CreateStory({
-    this.chapters,
-    this.pov,
-    this.povHints,
-    this.title,
-    this.titleHints,
-  });
+  const CreateStory({required this.newStory});
 
   @override
-  List<Object?> get props => [chapters, pov, povHints, title, titleHints];
+  List<Object> get props => [newStory];
 }
 
 class GetStories extends StoryEvent {
-  const GetStories();
+  final bool? showArchived;
+
+  const GetStories({this.showArchived = false});
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [showArchived];
+}
+
+class NewStory extends StoryEvent {
+  final String storyId;
+
+  const NewStory({required this.storyId});
+
+  @override
+  List<Object?> get props => [storyId];
 }
 
 class UpdateNewStory extends StoryEvent {

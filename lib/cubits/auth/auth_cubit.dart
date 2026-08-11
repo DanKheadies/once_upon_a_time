@@ -66,6 +66,7 @@ class AuthCubit extends HydratedCubit<AuthState> {
             email: state.email,
             lastUpdate: DateTime.now(),
             status: AuthStatus.authenticated,
+            uid: user?.uid,
           ),
         );
       } catch (err) {

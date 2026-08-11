@@ -3,12 +3,12 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-class BackgroundVideo extends StatefulWidget {
+class BackgroundShader extends StatefulWidget {
   final double height;
   final double width;
   final Function isInitialized;
 
-  const BackgroundVideo({
+  const BackgroundShader({
     super.key,
     required this.height,
     required this.isInitialized,
@@ -16,10 +16,10 @@ class BackgroundVideo extends StatefulWidget {
   });
 
   @override
-  State<BackgroundVideo> createState() => _BackgroundVideoState();
+  State<BackgroundShader> createState() => _BackgroundShaderState();
 }
 
-class _BackgroundVideoState extends State<BackgroundVideo> {
+class _BackgroundShaderState extends State<BackgroundShader> {
   bool hasShader = false;
 
   late ui.FragmentShader pageShader;

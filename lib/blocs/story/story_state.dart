@@ -7,25 +7,35 @@ class StoryState extends Equatable {
   final Story currentStory;
   final Story newStory;
   final StoryStateStatus status;
+  final String? errorMessage;
 
   const StoryState({
     this.currentStory = Story.emptyStory,
     this.newStory = Story.emptyStory,
     this.status = StoryStateStatus.initial,
     this.stories = const [],
+    this.errorMessage,
   });
 
   @override
-  List<Object> get props => [currentStory, newStory, status, stories];
+  List<Object?> get props => [
+    currentStory,
+    errorMessage,
+    newStory,
+    status,
+    stories,
+  ];
 
   StoryState copyWith({
     List<Story>? stories,
     Story? currentStory,
     Story? newStory,
     StoryStateStatus? status,
+    String? errorMessage,
   }) {
     return StoryState(
       currentStory: currentStory ?? this.currentStory,
+      errorMessage: errorMessage ?? this.errorMessage,
       newStory: newStory ?? this.newStory,
       status: status ?? this.status,
       stories: stories ?? this.stories,
@@ -39,6 +49,7 @@ class StoryState extends Equatable {
 
     return StoryState(
       currentStory: Story.fromJson(json['currentStory']),
+      errorMessage: json['errorMessage'],
       newStory: Story.fromJson(json['newStory']),
       status: StoryStateStatus.values.firstWhere(
         (status) => status.name == json['status'],
@@ -57,6 +68,7 @@ class StoryState extends Equatable {
 
     return {
       'currentStory': currentStory.toJson(),
+      'errorMessage': errorMessage,
       'newStory': newStory.toJson(),
       'status': status.name,
       'stories': storiesList,

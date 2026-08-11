@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 class Story extends Equatable {
-  final bool? isDeleted;
+  final bool? isArchived;
   final DateTime? createdOn;
   final DateTime? updatedOn;
   final List<String> chapters;
@@ -12,6 +12,7 @@ class Story extends Equatable {
   final String createdBy;
   final String id;
   final String title;
+  // final String? updatedBy; // TODO
 
   const Story({
     required this.chapters,
@@ -20,7 +21,7 @@ class Story extends Equatable {
     required this.pov,
     required this.title,
     this.createdOn,
-    this.isDeleted = false,
+    this.isArchived = false,
     this.povHints = const [],
     this.titleHints = const [],
     this.updatedOn,
@@ -32,7 +33,7 @@ class Story extends Equatable {
     createdBy,
     createdOn,
     id,
-    isDeleted,
+    isArchived,
     pov,
     povHints,
     title,
@@ -41,7 +42,7 @@ class Story extends Equatable {
   ];
 
   Story copyWith({
-    bool? isDeleted,
+    bool? isArchived,
     DateTime? createdOn,
     DateTime? updatedOn,
     List<String>? chapters,
@@ -57,7 +58,7 @@ class Story extends Equatable {
       createdBy: createdBy ?? this.createdBy,
       createdOn: createdOn ?? this.createdOn,
       id: id ?? this.id,
-      isDeleted: isDeleted ?? this.isDeleted,
+      isArchived: isArchived ?? this.isArchived,
       pov: pov ?? this.pov,
       povHints: povHints ?? this.povHints,
       title: title ?? this.title,
@@ -87,7 +88,7 @@ class Story extends Equatable {
       createdBy: json['createdBy'],
       createdOn: createdOnDT,
       id: json['id'],
-      isDeleted: json['isDeleted'],
+      isArchived: json['isArchived'],
       pov: (json['pov'] as List).map((view) => view as String).toList(),
       povHints: json['povHints'] != null
           ? (json['povHints'] as List).map((hint) => hint as String).toList()
@@ -106,7 +107,7 @@ class Story extends Equatable {
       'createdBy': createdBy,
       'createdOn': createdOn?.toUtc().toString(),
       'id': id,
-      'isDeleted': isDeleted,
+      'isArchived': isArchived,
       'pov': pov,
       'povHints': povHints,
       'title': title,

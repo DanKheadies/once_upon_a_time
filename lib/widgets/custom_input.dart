@@ -63,12 +63,12 @@ class _CustomInputState extends State<CustomInput> {
       textCapitalization: widget.isMulti!
           ? TextCapitalization.sentences
           : TextCapitalization.none,
-      // onChanged: widget.onChanged,
       onChanged: (value) {
-        controller.selection = TextSelection(
-          baseOffset: controller.text.length,
-          extentOffset: controller.text.length,
-        );
+        // TODO: needed for auth custom input (?)
+        // controller.selection = TextSelection(
+        //   baseOffset: controller.text.length,
+        //   extentOffset: controller.text.length,
+        // );
         if (widget.onChanged != null) {
           widget.onChanged!(value);
         }
@@ -102,9 +102,7 @@ class _CustomInputState extends State<CustomInput> {
         ),
       ),
       obscureText: widget.obscureText ?? false,
-      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-        color: Theme.of(context).colorScheme.surface,
-      ),
+      style: TextStyle(color: Theme.of(context).colorScheme.surface),
       maxLines: widget.isMulti! ? null : 1,
       minLines: widget.isMulti! ? 3 : 1,
     );

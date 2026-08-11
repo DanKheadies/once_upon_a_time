@@ -19,13 +19,19 @@ class DatabaseRepository {
        _log = logger ?? Logger();
 
   /// (Firebase) Get a list of stories
-  Future<List<Story>> getStories() async {
+  Future<List<Story>> getStories(bool? showArchived) async {
     List<Story> storiesList = [];
 
     try {
-      QuerySnapshot<Map<String, dynamic>> doc = await _firebaseFirestore
-          .collection('stories')
-          .get();
+      late QuerySnapshot<Map<String, dynamic>> doc;
+      if (showArchived!) {
+        doc = await _firebaseFirestore.collection('stories').get();
+      } else {
+        doc = await _firebaseFirestore
+            .collection('stories')
+            .where('isArchived', isEqualTo: false)
+            .get();
+      }
 
       for (var snap in doc.docs) {
         storiesList.add(Story.fromSnapshot(snap));
@@ -34,6 +40,18 @@ class DatabaseRepository {
       _log.e('getStories error', error: err);
     }
     return storiesList;
+  }
+
+  /// (Firebase) Update an area via id.
+  Future<Story> createStory({required Story newStory}) async {
+    DocumentReference docRef = await _firebaseFirestore
+        .collection('stories')
+        .add({});
+    await _firebaseFirestore
+        .collection('stories')
+        .doc(docRef.id)
+        .set(newStory.copyWith(id: docRef.id).toJson());
+    return newStory.copyWith(id: docRef.id);
   }
 
   /// (Firebase) Update an area via id.
