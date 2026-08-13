@@ -110,9 +110,15 @@ class ParchmentPage extends StatelessWidget {
             height: height,
           ),
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: layout.pageWidth / 9,
-              vertical: layout.pageHeight / 18,
+            // padding: EdgeInsets.symmetric(
+            //   horizontal: layout.pageWidth / 9,
+            //   vertical: layout.pageHeight / 18,
+            // ),
+            padding: EdgeInsets.only(
+              left: layout.pageWidth / 9,
+              right: layout.pageWidth / 50,
+              bottom: layout.pageHeight / 18,
+              top: layout.pageHeight / 18,
             ),
             child: child,
           ),

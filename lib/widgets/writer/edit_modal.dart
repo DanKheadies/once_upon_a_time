@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+// import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
 class EditModal extends StatefulWidget {
   final bool? isMulti;
   final int index;
+  final Function(String) onUpdate;
   final Story newStory;
   final String content;
 
@@ -13,6 +14,7 @@ class EditModal extends StatefulWidget {
     required this.content,
     required this.index,
     required this.newStory,
+    required this.onUpdate,
     this.isMulti = false,
   });
 
@@ -31,6 +33,12 @@ class _EditModalState extends State<EditModal> {
   }
 
   @override
+  void dispose() {
+    newContent.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Dialog(
       child: Padding(
@@ -41,17 +49,17 @@ class _EditModalState extends State<EditModal> {
           children: [
             Text(widget.content),
             const SizedBox(height: 15),
-            CustomInput(
+            SimpleInput(
+              controller: newContent,
               labelText: 'Content',
-              cont: newContent,
-              initialValue: widget.content,
+              // initialValue: widget.content,
               isMulti: widget.isMulti,
-              onChanged: (value) {
-                setState(() {
-                  newContent.text = value;
-                });
-              },
-              onEnter: (_) {},
+              // onChanged: (value) {
+              //   setState(() {
+              //     newContent.text = value;
+              //   });
+              // },
+              // onEnter: (_) {},
             ),
             const SizedBox(height: 20),
             Center(
@@ -59,16 +67,7 @@ class _EditModalState extends State<EditModal> {
                 onPressed: newContent.text == widget.content
                     ? null
                     : () {
-                        List<String> updatedChapters = widget.newStory.chapters
-                            .toList();
-                        updatedChapters[widget.index] = newContent.text;
-                        context.read<StoryBloc>().add(
-                          UpdateNewStory(
-                            newStory: widget.newStory.copyWith(
-                              chapters: updatedChapters,
-                            ),
-                          ),
-                        );
+                        widget.onUpdate(newContent.text);
                         Navigator.of(context).pop();
                       },
                 child: Text(

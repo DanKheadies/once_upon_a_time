@@ -63,6 +63,7 @@ class _DatePickerState extends State<DatePicker> {
     if (widget.node == null) {
       dateNode.dispose();
     }
+    dateController.dispose();
     super.dispose();
   }
 
@@ -78,18 +79,19 @@ class _DatePickerState extends State<DatePicker> {
           children: [
             SizedBox(
               width: 150,
-              child: CustomInput(
+              child: SimpleInput(
+                controller: dateController,
                 key: dateKey,
                 labelText: isEnteringDate && date == null
                     ? 'mm/dd/yyyy'
                     : widget.label,
-                initialValue: dateController.text,
-                cont: dateController,
-                node: dateNode,
+                // initialValue: dateController.text,
+                // cont: dateController,
+                // node: dateNode,
                 // hasError: widget.hasError,
                 // isDisabled: widget.isDisabled,
-                onChanged: (value) {},
-                onEnter: (value) {},
+                // onChanged: (value) {},
+                // onEnter: (value) {},
               ),
             ),
             const SizedBox(width: 5),

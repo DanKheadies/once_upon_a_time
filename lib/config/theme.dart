@@ -16,13 +16,13 @@ Color parchment4 = Color(0xFF827547);
 
 ThemeData darkTheme() {
   return ThemeData.dark().copyWith(
-    primaryColor: gold500,
+    primaryColor: gold700,
     scaffoldBackgroundColor: black400,
     appBarTheme: AppBarTheme(backgroundColor: black500),
     colorScheme: ColorScheme(
       brightness: Brightness.dark,
       primary: gold700,
-      onPrimary: ThemeData.dark().colorScheme.onPrimary,
+      onPrimary: gold500,
       secondary: ThemeData.dark().colorScheme.secondary,
       onSecondary: ThemeData.dark().colorScheme.onSecondary,
       error: red500,
@@ -37,6 +37,9 @@ ThemeData darkTheme() {
         backgroundColor: gold700,
         foregroundColor: black500,
       ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(foregroundColor: gold700),
     ),
     // textTheme: TextTheme(),
   );

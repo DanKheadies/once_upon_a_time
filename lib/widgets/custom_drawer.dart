@@ -5,12 +5,24 @@ import 'package:once_upon_a_time/barrel.dart';
 
 class CustomDrawer extends StatelessWidget {
   final bool? isStorybook;
-  final Function()? resetStory;
+  final bool? isStorybookOpen;
+  final VoidCallback? resetStory;
+  final VoidCallback? solveStory;
 
-  const CustomDrawer({super.key, this.isStorybook = true, this.resetStory});
+  const CustomDrawer({
+    super.key,
+    this.isStorybook = true,
+    this.isStorybookOpen = false,
+    this.resetStory,
+    this.solveStory,
+  });
 
   @override
   Widget build(BuildContext context) {
+    Color activeColor = isStorybookOpen!
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.surface;
+
     return Drawer(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
@@ -63,53 +75,46 @@ class CustomDrawer extends StatelessWidget {
             ListTile(
               title: Text(
                 'Solve Story',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: TextStyle(fontSize: 18, color: activeColor),
               ),
-              leading: Icon(
-                Icons.auto_awesome,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              onTap: () => print('TODO: solve'),
+              leading: Icon(Icons.auto_awesome, color: activeColor),
+              onTap: isStorybookOpen! ? solveStory ?? () {} : null,
               hoverColor: Theme.of(context).colorScheme.primary.withAlpha(30),
             ),
             ListTile(
               title: Text(
                 'New Story',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: TextStyle(fontSize: 18, color: activeColor),
               ),
-              leading: Icon(
-                Icons.auto_mode,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              onTap: () {
-                context.read<StoryBloc>().add(
-                  NewStory(
-                    storyId: context.read<StoryBloc>().state.currentStory.id,
-                  ),
-                );
-                Navigator.of(context).pop();
-              },
+              leading: Icon(Icons.auto_mode, color: activeColor),
+              onTap: isStorybookOpen!
+                  ? () {
+                      context.read<StoryBloc>().add(
+                        NewStory(
+                          storyId: context
+                              .read<StoryBloc>()
+                              .state
+                              .currentStory
+                              .id,
+                        ),
+                      );
+                      Navigator.of(context).pop();
+                    }
+                  : null,
               hoverColor: Theme.of(context).colorScheme.primary.withAlpha(30),
             ),
             ListTile(
               title: Text(
                 'Reset Story',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: TextStyle(fontSize: 18, color: activeColor),
               ),
-              leading: Icon(
-                Icons.autorenew,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              onTap: resetStory,
+              leading: Icon(Icons.autorenew, color: activeColor),
+              onTap: isStorybookOpen!
+                  ? () {
+                      if (resetStory != null) resetStory!();
+                      Navigator.of(context).pop();
+                    }
+                  : null,
               hoverColor: Theme.of(context).colorScheme.primary.withAlpha(30),
             ),
             BlocBuilder<SettingsCubit, SettingsState>(
@@ -184,6 +189,21 @@ class CustomDrawer extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
               onTap: () => context.goNamed('home'),
+              hoverColor: Theme.of(context).colorScheme.primary.withAlpha(30),
+            ),
+            ListTile(
+              title: Text(
+                'Stage',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              leading: Icon(
+                Icons.temple_buddhist,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              onTap: () => context.goNamed('stage'),
               hoverColor: Theme.of(context).colorScheme.primary.withAlpha(30),
             ),
           ],

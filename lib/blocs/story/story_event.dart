@@ -16,6 +16,15 @@ class CreateStory extends StoryEvent {
   List<Object> get props => [newStory];
 }
 
+class DeleteStory extends StoryEvent {
+  final String storyId;
+
+  const DeleteStory({required this.storyId});
+
+  @override
+  List<Object> get props => [storyId];
+}
+
 class GetStories extends StoryEvent {
   final bool? showArchived;
 
@@ -41,4 +50,13 @@ class UpdateNewStory extends StoryEvent {
 
   @override
   List<Object> get props => [newStory];
+}
+
+class UpdateStory extends StoryEvent {
+  final Story editedStory;
+
+  const UpdateStory({required this.editedStory});
+
+  @override
+  List<Object> get props => [editedStory];
 }

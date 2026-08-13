@@ -10,6 +10,7 @@ class StoryWriterScreen extends StatefulWidget {
 
 class _StoryWriterScreenState extends State<StoryWriterScreen> {
   double tabsHeight = 50;
+  // Story editingStory = Story.emptyStory;
   WriterTabType activeTab = WriterTabType.create;
 
   @override
@@ -43,10 +44,18 @@ class _StoryWriterScreenState extends State<StoryWriterScreen> {
                   CreateStoryPane(height: height - tabsHeight, width: width),
                 ],
                 if (activeTab == WriterTabType.read) ...[
-                  ReadStoriesPane(height: height - tabsHeight, width: width),
+                  ReadStoriesPane(
+                    height: height - tabsHeight,
+                    updateStory: updateStory,
+                    width: width,
+                  ),
                 ],
                 if (activeTab == WriterTabType.update) ...[
-                  Texxt('update', useDark: false),
+                  UpdateStoryPane(
+                    height: height - tabsHeight,
+                    // editingStory: editingStory,
+                    width: width,
+                  ),
                 ],
               ],
             );
@@ -54,5 +63,12 @@ class _StoryWriterScreenState extends State<StoryWriterScreen> {
         ),
       ),
     );
+  }
+
+  void updateStory(Story editingStory) {
+    setState(() {
+      activeTab = WriterTabType.update;
+      editingStory = editingStory;
+    });
   }
 }

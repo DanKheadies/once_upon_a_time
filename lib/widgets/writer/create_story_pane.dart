@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:once_upon_a_time/barrel.dart';
@@ -14,28 +16,28 @@ class CreateStoryPane extends StatefulWidget {
 
 class _CreateStoryPaneState extends State<CreateStoryPane> {
   bool setDate = false;
-  late TextEditingController chaptersCont;
-  late TextEditingController povCont;
-  late TextEditingController povHintsCont;
-  late TextEditingController titleCont;
-  late TextEditingController titleHintsCont;
+  TextEditingController chaptersCont = TextEditingController();
+  TextEditingController povCont = TextEditingController();
+  TextEditingController povHintsCont = TextEditingController();
+  TextEditingController titleCont = TextEditingController();
+  TextEditingController titleHintsCont = TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
-    initializeControllers();
+    titleCont.text = context.read<StoryBloc>().state.newStory.title;
   }
 
-  void initializeControllers() {
-    setState(() {
-      chaptersCont = TextEditingController();
-      povCont = TextEditingController();
-      povHintsCont = TextEditingController();
-      titleCont = TextEditingController();
-      titleHintsCont = TextEditingController();
-      setDate = false;
-    });
+  @override
+  void dispose() {
+    chaptersCont.dispose();
+    povCont.dispose();
+    povHintsCont.dispose();
+    titleCont.dispose();
+    titleHintsCont.dispose();
+
+    super.dispose();
   }
 
   @override
@@ -57,7 +59,10 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
         }
         if (state.status == StoryStateStatus.updated) {
           // print('successful update; clear out');
-          initializeControllers();
+          // Note: shouldn't use this; it just makes the inputs "dead"
+          // initializeControllers();
+          clearControllers();
+
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(
@@ -67,134 +72,469 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
       },
       child: BlocBuilder<StoryBloc, StoryState>(
         builder: (context, state) {
-          return SizedBox(
-            height: widget.height,
-            child: state.status == StoryStateStatus.updating
-                ? Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        SizedBox(height: 25, width: widget.width),
-                        Container(
-                          padding: rowPadding,
-                          width: widget.width < 850 ? widget.width : 500,
-                          child: CustomInput(
-                            labelText: 'Title',
-                            initialValue: state.newStory.title,
-                            // cont: titleCont,
-                            onChanged: (value) {
-                              context.read<StoryBloc>().add(
-                                UpdateNewStory(
-                                  newStory: state.newStory.copyWith(
-                                    title: value,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+          if (state.status == StoryStateStatus.updating) {
+            return SizedBox(
+              height: widget.height,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return ScrollConfiguration(
+            behavior: const MaterialScrollBehavior().copyWith(
+              dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+                PointerDeviceKind.trackpad,
+                PointerDeviceKind.stylus,
+              },
+            ),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                context.read<StoryBloc>().add(
+                  UpdateNewStory(newStory: Story.emptyStory),
+                );
+                // initializeControllers();
+                clearControllers();
+                // setState(() {
+                //   titleOverride = 'CLEAR';
+                //   titleCont.clear();
+                // });
+              },
+              child: SizedBox(
+                height: widget.height,
+                child: SingleChildScrollView(
+                  physics: AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 25, width: widget.width),
+                      Container(
+                        padding: rowPadding,
+                        width: widget.width < 850 ? widget.width : 500,
+                        child: SimpleInput(
+                          controller: titleCont,
+                          labelText: 'Title',
+                          onChanged: (value) {
+                            context.read<StoryBloc>().add(
+                              UpdateNewStory(
+                                newStory: state.newStory.copyWith(title: value),
+                              ),
+                            );
+                          },
                         ),
-                        // TODO: refactor Title Hints as a link & subsection here
-                        Container(
-                          padding: rowPadding,
-                          width: widget.width < 850 ? widget.width : 500,
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    flex: 1,
-                                    child: CustomInput(
-                                      labelText: 'Point of View',
-                                      cont: povCont,
-                                      onEnter: (_) =>
-                                          addPOV(context, state.newStory),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  IconButton(
-                                    icon: Icon(Icons.add),
-                                    onPressed: () =>
+                        // child: CustomInput(
+                        //   labelText: 'Title',
+                        //   initialValue: titleOverride ?? state.newStory.title,
+                        //   cont: titleCont,
+                        //   onChanged: (value) {
+                        //     context.read<StoryBloc>().add(
+                        //       UpdateNewStory(
+                        //         newStory: state.newStory.copyWith(title: value),
+                        //       ),
+                        //     );
+                        //   },
+                        // ),
+                        // child: TextField(
+                        //   controller: titleCont,
+                        //   onChanged: (value) {
+                        //     context.read<StoryBloc>().add(
+                        //       UpdateNewStory(
+                        //         newStory: state.newStory.copyWith(title: value),
+                        //       ),
+                        //     );
+                        //   },
+                        //   onSubmitted: (value) {
+                        //     context.read<StoryBloc>().add(
+                        //       UpdateNewStory(
+                        //         newStory: state.newStory.copyWith(title: value),
+                        //       ),
+                        //     );
+                        //   },
+                        //   decoration: InputDecoration(
+                        //     labelText: 'Title',
+                        //     labelStyle: TextStyle(
+                        //       color: Theme.of(context).colorScheme.onSurface,
+                        //     ),
+                        //     filled: true,
+                        //     fillColor: Theme.of(
+                        //       context,
+                        //     ).scaffoldBackgroundColor,
+                        //     enabledBorder: OutlineInputBorder(
+                        //       borderRadius: BorderRadius.circular(8),
+                        //       borderSide: BorderSide(
+                        //         color: Theme.of(context).colorScheme.primary,
+                        //         width: 1,
+                        //       ),
+                        //     ),
+                        //     focusedBorder: OutlineInputBorder(
+                        //       borderRadius: BorderRadius.circular(8),
+                        //       borderSide: BorderSide(
+                        //         color: Theme.of(context).colorScheme.surface,
+                        //         width: 2,
+                        //       ),
+                        //     ),
+                        //     focusedErrorBorder: OutlineInputBorder(
+                        //       borderRadius: BorderRadius.circular(8),
+                        //       borderSide: BorderSide(
+                        //         color: Theme.of(context).colorScheme.error,
+                        //         width: 2,
+                        //       ),
+                        //     ),
+                        //   ),
+                        //   style: TextStyle(
+                        //     color: Theme.of(context).colorScheme.surface,
+                        //   ),
+                        //   // maxLines: widget.obscureText!
+                        //   //     ? 1
+                        //   //     : widget.isMulti!
+                        //   //     ? null
+                        //   //     : 2,
+                        //   // minLines: widget.isMulti! ? 3 : 1,
+                        // ),
+                      ),
+                      // TODO: refactor Title Hints as a link & subsection here
+                      Container(
+                        padding: rowPadding,
+                        width: widget.width < 850 ? widget.width : 500,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  flex: 1,
+                                  child: SimpleInput(
+                                    controller: povCont,
+                                    labelText: 'Point of View',
+                                    // onChanged: (value) {
+                                    //   context.read<StoryBloc>().add(
+                                    //     UpdateNewStory(
+                                    //       newStory: state.newStory.copyWith(
+                                    //         title: value,
+                                    //       ),
+                                    //     ),
+                                    //   );
+                                    // },
+                                    onEnter: (_) =>
                                         addPOV(context, state.newStory),
                                   ),
-                                ],
-                              ),
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                itemCount: state.newStory.pov.length,
-                                itemBuilder: (context, index) => ListTile(
-                                  title: Text(state.newStory.pov[index]),
-                                  trailing: IconButton(
-                                    icon: Icon(Icons.remove),
-                                    onPressed: () {
-                                      List<String> povList = state.newStory.pov
-                                          .toList();
-                                      povList.remove(state.newStory.pov[index]);
+                                  // child: CustomInput(
+                                  //   labelText: 'Point of View',
+                                  //   cont: povCont,
+                                  //   onEnter: (_) =>
+                                  //       addPOV(context, state.newStory),
+                                  // ),
+                                  // child: TextField(
+                                  //   controller: povCont,
+                                  //   onChanged: (value) {
+                                  //     // TODO: update controller (?)
+                                  //   },
+                                  //   onSubmitted: (value) =>
+                                  //       addPOV(context, state.newStory),
+                                  //   decoration: InputDecoration(
+                                  //     labelText: 'Point of View',
+                                  //     labelStyle: TextStyle(
+                                  //       color: Theme.of(
+                                  //         context,
+                                  //       ).colorScheme.onSurface,
+                                  //     ),
+                                  //     filled: true,
+                                  //     fillColor: Theme.of(
+                                  //       context,
+                                  //     ).scaffoldBackgroundColor,
+                                  //     enabledBorder: OutlineInputBorder(
+                                  //       borderRadius: BorderRadius.circular(8),
+                                  //       borderSide: BorderSide(
+                                  //         color: Theme.of(
+                                  //           context,
+                                  //         ).colorScheme.primary,
+                                  //         width: 1,
+                                  //       ),
+                                  //     ),
+                                  //     focusedBorder: OutlineInputBorder(
+                                  //       borderRadius: BorderRadius.circular(8),
+                                  //       borderSide: BorderSide(
+                                  //         color: Theme.of(
+                                  //           context,
+                                  //         ).colorScheme.surface,
+                                  //         width: 2,
+                                  //       ),
+                                  //     ),
+                                  //     focusedErrorBorder: OutlineInputBorder(
+                                  //       borderRadius: BorderRadius.circular(8),
+                                  //       borderSide: BorderSide(
+                                  //         color: Theme.of(
+                                  //           context,
+                                  //         ).colorScheme.error,
+                                  //         width: 2,
+                                  //       ),
+                                  //     ),
+                                  //   ),
+                                  //   style: TextStyle(
+                                  //     color: Theme.of(
+                                  //       context,
+                                  //     ).colorScheme.surface,
+                                  //   ),
+                                  // ),
+                                ),
+                                const SizedBox(width: 10),
+                                IconButton(
+                                  icon: Icon(Icons.add),
+                                  onPressed: () =>
+                                      addPOV(context, state.newStory),
+                                ),
+                              ],
+                            ),
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: state.newStory.pov.length,
+                              itemBuilder: (context, index) => ListTile(
+                                title: Text(state.newStory.pov[index]),
+                                trailing: IconButton(
+                                  icon: Icon(Icons.remove),
+                                  onPressed: () {
+                                    List<String> povList = state.newStory.pov
+                                        .toList();
+                                    povList.remove(state.newStory.pov[index]);
 
-                                      context.read<StoryBloc>().add(
-                                        UpdateNewStory(
-                                          newStory: state.newStory.copyWith(
-                                            pov: povList,
-                                          ),
+                                    context.read<StoryBloc>().add(
+                                      UpdateNewStory(
+                                        newStory: state.newStory.copyWith(
+                                          pov: povList,
                                         ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                contentPadding: const EdgeInsets.only(left: 16),
+                                onLongPress: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return EditModal(
+                                        content: state.newStory.pov[index],
+                                        index: index,
+                                        // isMulti: true,
+                                        newStory: state.newStory,
+                                        onUpdate: (newValue) {
+                                          List<String> updatedPOV = state
+                                              .newStory
+                                              .pov
+                                              .toList();
+                                          updatedPOV[index] = newValue;
+                                          context.read<StoryBloc>().add(
+                                            UpdateNewStory(
+                                              newStory: state.newStory.copyWith(
+                                                pov: updatedPOV,
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       );
                                     },
-                                  ),
-                                  contentPadding: const EdgeInsets.only(
-                                    left: 16,
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        // TODO: refactor POV Hints as a link & subsection here
-                        Container(
-                          padding: rowPadding,
-                          width: widget.width < 850 ? widget.width : 500,
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    flex: 1,
-                                    child: CustomInput(
-                                      labelText: 'Chapters',
-                                      cont: chaptersCont,
-                                      isMulti: true,
-                                      onEnter: (_) =>
-                                          addChapter(context, state.newStory),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  IconButton(
-                                    icon: Icon(Icons.add),
-                                    onPressed: () =>
+                      ),
+                      // TODO: refactor POV Hints as a link & subsection here
+                      Container(
+                        padding: rowPadding,
+                        width: widget.width < 850 ? widget.width : 500,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  flex: 1,
+                                  child: SimpleInput(
+                                    controller: chaptersCont,
+                                    labelText: 'Chapters',
+                                    isMulti: true,
+                                    onEnter: (_) =>
                                         addChapter(context, state.newStory),
                                   ),
-                                ],
+                                  // child: CustomInput(
+                                  //   labelText: 'Chapters',
+                                  //   cont: chaptersCont,
+                                  //   isMulti: true,
+                                  //   onEnter: (_) =>
+                                  //       addChapter(context, state.newStory),
+                                  // ),
+                                  // child: TextField(
+                                  //   controller: chaptersCont,
+                                  //   onChanged: (value) {
+                                  //     // TODO: update controller (?)
+                                  //   },
+                                  //   onSubmitted: (value) =>
+                                  //       addChapter(context, state.newStory),
+                                  //   decoration: InputDecoration(
+                                  //     labelText: 'Chapters',
+                                  //     labelStyle: TextStyle(
+                                  //       color: Theme.of(
+                                  //         context,
+                                  //       ).colorScheme.onSurface,
+                                  //     ),
+                                  //     filled: true,
+                                  //     fillColor: Theme.of(
+                                  //       context,
+                                  //     ).scaffoldBackgroundColor,
+                                  //     enabledBorder: OutlineInputBorder(
+                                  //       borderRadius: BorderRadius.circular(8),
+                                  //       borderSide: BorderSide(
+                                  //         color: Theme.of(
+                                  //           context,
+                                  //         ).colorScheme.primary,
+                                  //         width: 1,
+                                  //       ),
+                                  //     ),
+                                  //     focusedBorder: OutlineInputBorder(
+                                  //       borderRadius: BorderRadius.circular(8),
+                                  //       borderSide: BorderSide(
+                                  //         color: Theme.of(
+                                  //           context,
+                                  //         ).colorScheme.surface,
+                                  //         width: 2,
+                                  //       ),
+                                  //     ),
+                                  //     focusedErrorBorder: OutlineInputBorder(
+                                  //       borderRadius: BorderRadius.circular(8),
+                                  //       borderSide: BorderSide(
+                                  //         color: Theme.of(
+                                  //           context,
+                                  //         ).colorScheme.error,
+                                  //         width: 2,
+                                  //       ),
+                                  //     ),
+                                  //   ),
+                                  //   style: TextStyle(
+                                  //     color: Theme.of(
+                                  //       context,
+                                  //     ).colorScheme.surface,
+                                  //   ),
+                                  // ),
+                                ),
+                                const SizedBox(width: 10),
+                                IconButton(
+                                  icon: Icon(Icons.add),
+                                  onPressed: () =>
+                                      addChapter(context, state.newStory),
+                                ),
+                              ],
+                            ),
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: state.newStory.chapters.length,
+                              itemBuilder: (context, index) => ListTile(
+                                title: Text(state.newStory.chapters[index]),
+                                trailing: IconButton(
+                                  icon: Icon(Icons.remove),
+                                  onPressed: () {
+                                    List<String> chaptersList = state
+                                        .newStory
+                                        .chapters
+                                        .toList();
+                                    chaptersList.remove(
+                                      state.newStory.chapters[index],
+                                    );
+
+                                    context.read<StoryBloc>().add(
+                                      UpdateNewStory(
+                                        newStory: state.newStory.copyWith(
+                                          chapters: chaptersList,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                contentPadding: const EdgeInsets.only(left: 16),
+                                onLongPress: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return EditModal(
+                                        content: state.newStory.chapters[index],
+                                        index: index,
+                                        isMulti: true,
+                                        newStory: state.newStory,
+                                        onUpdate: (newValue) {
+                                          List<String> updatedChapters = state
+                                              .newStory
+                                              .chapters
+                                              .toList();
+                                          updatedChapters[index] = newValue;
+                                          context.read<StoryBloc>().add(
+                                            UpdateNewStory(
+                                              newStory: state.newStory.copyWith(
+                                                chapters: updatedChapters,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
                               ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: rowPadding,
+                        width: widget.width < 850 ? widget.width : 500,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  flex: 1,
+                                  child: SimpleInput(
+                                    controller: titleHintsCont,
+                                    labelText: 'Title Hints',
+                                    onEnter: (_) =>
+                                        addTitleHints(context, state.newStory),
+                                  ),
+                                  // child: CustomInput(
+                                  //   labelText: 'Title Hints',
+                                  //   cont: titleHintsCont,
+                                  //   onEnter: (_) =>
+                                  //       addTitleHints(context, state.newStory),
+                                  // ),
+                                ),
+                                const SizedBox(width: 10),
+                                IconButton(
+                                  icon: Icon(Icons.add),
+                                  onPressed: () =>
+                                      addTitleHints(context, state.newStory),
+                                ),
+                              ],
+                            ),
+                            if (state.newStory.titleHints != null) ...[
                               ListView.builder(
                                 shrinkWrap: true,
                                 physics: NeverScrollableScrollPhysics(),
-                                itemCount: state.newStory.chapters.length,
+                                itemCount: state.newStory.titleHints!.length,
                                 itemBuilder: (context, index) => ListTile(
-                                  title: Text(state.newStory.chapters[index]),
+                                  title: Text(
+                                    state.newStory.titleHints![index],
+                                  ),
                                   trailing: IconButton(
                                     icon: Icon(Icons.remove),
                                     onPressed: () {
-                                      List<String> chaptersList = state
+                                      List<String> titleHintsList = state
                                           .newStory
-                                          .chapters
+                                          .titleHints!
                                           .toList();
-                                      chaptersList.remove(
-                                        state.newStory.chapters[index],
+                                      titleHintsList.remove(
+                                        state.newStory.titleHints![index],
                                       );
 
                                       context.read<StoryBloc>().add(
                                         UpdateNewStory(
                                           newStory: state.newStory.copyWith(
-                                            chapters: chaptersList,
+                                            titleHints: titleHintsList,
                                           ),
                                         ),
                                       );
@@ -209,10 +549,25 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                       builder: (context) {
                                         return EditModal(
                                           content:
-                                              state.newStory.chapters[index],
+                                              state.newStory.titleHints![index],
                                           index: index,
-                                          isMulti: true,
+                                          // isMulti: true,
                                           newStory: state.newStory,
+                                          onUpdate: (newValue) {
+                                            List<String> updatedChapters = state
+                                                .newStory
+                                                .chapters
+                                                .toList();
+                                            updatedChapters[index] = newValue;
+                                            context.read<StoryBloc>().add(
+                                              UpdateNewStory(
+                                                newStory: state.newStory
+                                                    .copyWith(
+                                                      chapters: updatedChapters,
+                                                    ),
+                                              ),
+                                            );
+                                          },
                                         );
                                       },
                                     );
@@ -220,237 +575,179 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                 ),
                               ),
                             ],
-                          ),
+                          ],
                         ),
-                        Container(
-                          padding: rowPadding,
-                          width: widget.width < 850 ? widget.width : 500,
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    flex: 1,
-                                    child: CustomInput(
-                                      labelText: 'Title Hints',
-                                      cont: titleHintsCont,
-                                      onEnter: (_) => addTitleHints(
-                                        context,
-                                        state.newStory,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  IconButton(
-                                    icon: Icon(Icons.add),
-                                    onPressed: () =>
-                                        addTitleHints(context, state.newStory),
-                                  ),
-                                ],
-                              ),
-                              if (state.newStory.titleHints != null) ...[
-                                ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  itemCount: state.newStory.titleHints!.length,
-                                  itemBuilder: (context, index) => ListTile(
-                                    title: Text(
-                                      state.newStory.titleHints![index],
-                                    ),
-                                    trailing: IconButton(
-                                      icon: Icon(Icons.remove),
-                                      onPressed: () {
-                                        List<String> titleHintsList = state
-                                            .newStory
-                                            .titleHints!
-                                            .toList();
-                                        titleHintsList.remove(
-                                          state.newStory.titleHints![index],
-                                        );
-
-                                        context.read<StoryBloc>().add(
-                                          UpdateNewStory(
-                                            newStory: state.newStory.copyWith(
-                                              titleHints: titleHintsList,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    contentPadding: const EdgeInsets.only(
-                                      left: 16,
-                                    ),
-                                    onLongPress: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return EditModal(
-                                            content: state
-                                                .newStory
-                                                .titleHints![index],
-                                            index: index,
-                                            isMulti: true,
-                                            newStory: state.newStory,
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: rowPadding,
-                          width: widget.width < 850 ? widget.width : 500,
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    flex: 1,
-                                    child: CustomInput(
-                                      labelText: 'POV Hints',
-                                      cont: povHintsCont,
-                                      onEnter: (_) =>
-                                          addPOVHints(context, state.newStory),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  IconButton(
-                                    icon: Icon(Icons.add),
-                                    onPressed: () =>
-                                        addPOVHints(context, state.newStory),
-                                  ),
-                                ],
-                              ),
-                              if (state.newStory.povHints != null) ...[
-                                ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  itemCount: state.newStory.povHints!.length,
-                                  itemBuilder: (context, index) => ListTile(
-                                    title: Text(
-                                      state.newStory.povHints![index],
-                                    ),
-                                    trailing: IconButton(
-                                      icon: Icon(Icons.remove),
-                                      onPressed: () {
-                                        List<String> povHintsList = state
-                                            .newStory
-                                            .povHints!
-                                            .toList();
-                                        povHintsList.remove(
-                                          state.newStory.povHints![index],
-                                        );
-
-                                        context.read<StoryBloc>().add(
-                                          UpdateNewStory(
-                                            newStory: state.newStory.copyWith(
-                                              povHints: povHintsList,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    contentPadding: const EdgeInsets.only(
-                                      left: 16,
-                                    ),
-                                    onLongPress: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return EditModal(
-                                            content:
-                                                state.newStory.povHints![index],
-                                            index: index,
-                                            isMulti: true,
-                                            newStory: state.newStory,
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        if (!setDate) ...[
-                          Tooltip(
-                            message: 'Currently set to today.',
-                            child: TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  setDate = !setDate;
-                                });
-                              },
-                              child: Text('Add Creation Date'),
-                            ),
-                          ),
-                        ],
-                        if (setDate) ...[
-                          Container(
-                            padding: rowPadding,
-                            width: widget.width,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                      ),
+                      Container(
+                        padding: rowPadding,
+                        width: widget.width < 850 ? widget.width : 500,
+                        child: Column(
+                          children: [
+                            Row(
                               children: [
                                 Flexible(
                                   flex: 1,
-                                  child: DatePicker(
-                                    label: 'Date Created',
-                                    onSave: (date) {
+                                  child: SimpleInput(
+                                    controller: povHintsCont,
+                                    labelText: 'POV Hints',
+                                    onEnter: (_) =>
+                                        addPOVHints(context, state.newStory),
+                                  ),
+                                  // child: CustomInput(
+                                  //   labelText: 'POV Hints',
+                                  //   cont: povHintsCont,
+                                  //   onEnter: (_) =>
+                                  //       addPOVHints(context, state.newStory),
+                                  // ),
+                                ),
+                                const SizedBox(width: 10),
+                                IconButton(
+                                  icon: Icon(Icons.add),
+                                  onPressed: () =>
+                                      addPOVHints(context, state.newStory),
+                                ),
+                              ],
+                            ),
+                            if (state.newStory.povHints != null) ...[
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: state.newStory.povHints!.length,
+                                itemBuilder: (context, index) => ListTile(
+                                  title: Text(state.newStory.povHints![index]),
+                                  trailing: IconButton(
+                                    icon: Icon(Icons.remove),
+                                    onPressed: () {
+                                      List<String> povHintsList = state
+                                          .newStory
+                                          .povHints!
+                                          .toList();
+                                      povHintsList.remove(
+                                        state.newStory.povHints![index],
+                                      );
+
                                       context.read<StoryBloc>().add(
                                         UpdateNewStory(
                                           newStory: state.newStory.copyWith(
-                                            createdOn: date,
+                                            povHints: povHintsList,
                                           ),
                                         ),
                                       );
                                     },
                                   ),
+                                  contentPadding: const EdgeInsets.only(
+                                    left: 16,
+                                  ),
+                                  onLongPress: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return EditModal(
+                                          content:
+                                              state.newStory.povHints![index],
+                                          index: index,
+                                          // isMulti: true,
+                                          newStory: state.newStory,
+                                          onUpdate: (newValue) {
+                                            List<String> updatedPOVHints =
+                                                (state.newStory.povHints ?? [])
+                                                    .toList();
+                                            updatedPOVHints[index] = newValue;
+                                            context.read<StoryBloc>().add(
+                                              UpdateNewStory(
+                                                newStory: state.newStory
+                                                    .copyWith(
+                                                      povHints: updatedPOVHints,
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      },
+                                    );
+                                  },
                                 ),
-                                const SizedBox(width: 10),
-                                IconButton(
-                                  icon: Icon(Icons.remove),
-                                  onPressed: () {
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (!setDate) ...[
+                        Tooltip(
+                          message: 'Currently set to today.',
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                setDate = !setDate;
+                              });
+                            },
+                            child: Text('Add Creation Date'),
+                          ),
+                        ),
+                      ],
+                      if (setDate) ...[
+                        Container(
+                          padding: rowPadding,
+                          width: widget.width,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                flex: 1,
+                                child: DatePicker(
+                                  label: 'Date Created',
+                                  onSave: (date) {
                                     context.read<StoryBloc>().add(
                                       UpdateNewStory(
                                         newStory: state.newStory.copyWith(
-                                          createdOn: DateTime.now(),
+                                          createdOn: date,
                                         ),
                                       ),
                                     );
-                                    setState(() {
-                                      setDate = !setDate;
-                                    });
                                   },
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        SizedBox(height: 35, width: widget.width),
-                        ElevatedButton(
-                          onPressed: () {
-                            context.read<StoryBloc>().add(
-                              CreateStory(
-                                newStory: state.newStory.copyWith(
-                                  createdBy:
-                                      context.read<AuthCubit>().state.uid ??
-                                      context.read<AuthCubit>().state.email,
-                                ),
                               ),
-                            );
-                          },
-                          child: Text('Save'),
+                              const SizedBox(width: 10),
+                              IconButton(
+                                icon: Icon(Icons.remove),
+                                onPressed: () {
+                                  context.read<StoryBloc>().add(
+                                    UpdateNewStory(
+                                      newStory: state.newStory.copyWith(
+                                        createdOn: DateTime.now(),
+                                      ),
+                                    ),
+                                  );
+                                  setState(() {
+                                    setDate = !setDate;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                        SizedBox(height: 25, width: widget.width),
                       ],
-                    ),
+                      SizedBox(height: 35, width: widget.width),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.read<StoryBloc>().add(
+                            CreateStory(
+                              newStory: state.newStory.copyWith(
+                                createdBy:
+                                    context.read<AuthCubit>().state.uid ??
+                                    context.read<AuthCubit>().state.email,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text('Save'),
+                      ),
+                      SizedBox(height: 25, width: widget.width),
+                    ],
                   ),
+                ),
+              ),
+            ),
           );
         },
       ),
@@ -477,16 +774,6 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
       });
     }
   }
-
-  // void addDateCreated(BuildContext context, DateTime date, Story newStory) {
-  //   context.read<StoryBloc>().add(
-  //     UpdateNewStory(newStory: newStory.copyWith(chapters: chaptersList)),
-  //   );
-
-  //   // setState(() {
-  //   //   chaptersCont.clear();
-  //   // });
-  // }
 
   void addPOV(BuildContext context, Story newStory) {
     if (povCont.text != '') {
@@ -531,5 +818,15 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
         titleHintsCont.clear();
       });
     }
+  }
+
+  void clearControllers() {
+    setState(() {
+      chaptersCont.clear();
+      povCont.clear();
+      povHintsCont.clear();
+      titleCont.clear();
+      titleHintsCont.clear();
+    });
   }
 }

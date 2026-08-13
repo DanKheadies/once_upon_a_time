@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:once_upon_a_time/barrel.dart';
 
 class StoryDetailsRow extends StatelessWidget {
+  final bool? isArchived;
   final double? labelWidth;
   final double? padding;
   final double? width;
@@ -13,6 +15,7 @@ class StoryDetailsRow extends StatelessWidget {
     super.key,
     required this.label,
     required this.value,
+    this.isArchived = false,
     this.labelWidth = 100,
     this.onHyperlink,
     this.padding = 12,
@@ -52,7 +55,15 @@ class StoryDetailsRow extends StatelessWidget {
                       ? _buildValues(context, sortedValues)
                       : const SizedBox(),
                 )
-              : SizedBox(width: width, child: Text(value)),
+              : SizedBox(
+                  width: width,
+                  child: onHyperlink != null
+                      ? HyperlinkText(
+                          text: isArchived! ? 'Yes, Activate' : 'No, Archive',
+                          onTap: onHyperlink!,
+                        )
+                      : Text(value),
+                ),
         ],
       ),
     );

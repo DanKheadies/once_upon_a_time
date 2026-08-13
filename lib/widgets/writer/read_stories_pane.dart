@@ -6,8 +6,14 @@ import 'package:once_upon_a_time/barrel.dart';
 class ReadStoriesPane extends StatefulWidget {
   final double height;
   final double width;
+  final Function(Story) updateStory;
 
-  const ReadStoriesPane({super.key, required this.height, required this.width});
+  const ReadStoriesPane({
+    super.key,
+    required this.height,
+    required this.updateStory,
+    required this.width,
+  });
 
   @override
   State<ReadStoriesPane> createState() => _ReadStoriesPaneState();
@@ -67,21 +73,59 @@ class _ReadStoriesPaneState extends State<ReadStoriesPane> {
                               // TODO: queue up UpdateStory
                               // Switch tab to Update
                               print(context.read<AuthCubit>().state.authUser);
+                              context.read<StoryBloc>().add(
+                                UpdateNewStory(newStory: state.stories[index]),
+                              );
+                              widget.updateStory(state.stories[index]);
                             },
                           ),
                           childrenPadding: const EdgeInsets.only(left: 16),
                           children: [
-                            if (state.stories[index].isArchived != null &&
-                                state.stories[index].isArchived!) ...[
-                              StoryDetailsRow(
-                                label: 'isArchived',
-                                value: 'yes, its inactive',
-                                width: calcWidth,
-                              ),
-                            ],
+                            // if (state.stories[index].isArchived != null &&
+                            //     state.stories[index].isArchived!) ...[
+                            //   StoryDetailsRow(
+                            //     label: 'isArchived',
+                            //     value: 'yes, its inactive',
+                            //     width: calcWidth,
+                            //   ),
+                            // ],
+                            // if (state.stories[index].isArchived != null &&
+                            //     state.stories[index].isArchived!) ...[
+                            //       TextButton()
+                            //     ],
                             StoryDetailsRow(
                               label: 'id',
                               value: state.stories[index].id,
+                              width: calcWidth,
+                            ),
+                            // TODO: incorporate feedback
+                            StoryDetailsRow(
+                              isArchived: state.stories[index].isArchived,
+                              onHyperlink:
+                                  state.status == StoryStateStatus.updating
+                                  ? null
+                                  : () {
+                                      context.read<StoryBloc>().add(
+                                        UpdateStory(
+                                          editedStory: state.stories[index]
+                                              .copyWith(
+                                                isArchived:
+                                                    state
+                                                            .stories[index]
+                                                            .isArchived ==
+                                                        null
+                                                    ? true
+                                                    : !state
+                                                          .stories[index]
+                                                          .isArchived!,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                              label: 'isArchived',
+                              value: state.status == StoryStateStatus.updating
+                                  ? 'Updating..'
+                                  : '',
                               width: calcWidth,
                             ),
                             StoryDetailsRow(

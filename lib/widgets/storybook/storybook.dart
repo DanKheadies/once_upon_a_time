@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class Storybook extends StatefulWidget {
+  final bool? canOpen;
   final double height;
   final double width;
   final Duration duration;
@@ -16,6 +17,7 @@ class Storybook extends StatefulWidget {
     required this.height,
     required this.frontCover,
     required this.pages,
+    this.canOpen = false,
     this.duration = const Duration(milliseconds: 900),
     this.onOpened,
   });
@@ -28,6 +30,14 @@ class StorybookState extends State<Storybook>
     with SingleTickerProviderStateMixin {
   bool opened = false;
   bool opening = false;
+  List<String> loadingPrompts = [
+    'Are you sure you want to do that?',
+    'Magic is collecting..',
+    'Try again with INTENT!',
+    'A picture is worth a thousand words.',
+    'Once upon a bind..',
+    'Say "please" first.',
+  ];
 
   final double kPerspective = 0.0015;
 
@@ -60,7 +70,15 @@ class StorybookState extends State<Storybook>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: open,
+      onTap: widget.canOpen!
+          ? open
+          : () {
+              int index = math.Random().nextInt(loadingPrompts.length);
+              // TODO: random responses
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(SnackBar(content: Text(loadingPrompts[index])));
+            },
       child: Container(
         color: Colors.transparent,
         width: widget.width,

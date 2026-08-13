@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:email_validator/email_validator.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
@@ -10,10 +12,13 @@ part 'auth_state.dart';
 class AuthCubit extends HydratedCubit<AuthState> {
   final AuthRepository authRepository;
   final Logger log;
+  StreamSubscription<auth.User?>? authSubscription;
 
   AuthCubit({required this.authRepository})
     : log = Logger(),
-      super(const AuthState());
+      super(const AuthState()) {
+    setupSubscription();
+  }
 
   Future<void> login() async {
     if (state.status == AuthStatus.submitting) return;
@@ -60,12 +65,14 @@ class AuthCubit extends HydratedCubit<AuthState> {
         //   ),
         // );
 
+        // print('login success, shoudld trigger stream / sub');
+
         emit(
           state.copyWith(
             authUser: user,
             email: state.email,
             lastUpdate: DateTime.now(),
-            status: AuthStatus.authenticated,
+            // status: AuthStatus.authenticated,
             uid: user?.uid,
           ),
         );
@@ -83,11 +90,13 @@ class AuthCubit extends HydratedCubit<AuthState> {
   }
 
   Future<void> logout() async {
+    // print('logout');
     if (state.status == AuthStatus.submitting) return;
     emit(state.copyWith(status: AuthStatus.submitting));
 
     try {
       await authRepository.signOut();
+      // print('signed out');
 
       emit(state.initialize());
     } catch (err) {
@@ -127,8 +136,29 @@ class AuthCubit extends HydratedCubit<AuthState> {
   // }
 
   void reset() {
-    print('derp');
+    // print('reset');
     emit(AuthState().initialize());
+  }
+
+  void setupSubscription() {
+    // print('sub setup');
+    authSubscription = authRepository.user.listen((authUser) async {
+      // print('auth sub online');
+      // print(authUser);
+      if (authUser != null) {
+        // print('has user');
+        emit(
+          state.copyWith(
+            authUser: authUser,
+            status: AuthStatus.authenticated,
+            uid: authUser.uid,
+          ),
+        );
+      } else if (authUser == null && state.status == AuthStatus.authenticated) {
+        // print('no auth, but have local cache so Sign Out');
+        logout();
+      }
+    });
   }
 
   void updateLogin({String? email, String? password}) {

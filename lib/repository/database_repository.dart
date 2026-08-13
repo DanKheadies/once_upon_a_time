@@ -42,7 +42,7 @@ class DatabaseRepository {
     return storiesList;
   }
 
-  /// (Firebase) Update an area via id.
+  /// (Firebase) Create a story document and add the new story to it.
   Future<Story> createStory({required Story newStory}) async {
     DocumentReference docRef = await _firebaseFirestore
         .collection('stories')
@@ -54,7 +54,12 @@ class DatabaseRepository {
     return newStory.copyWith(id: docRef.id);
   }
 
-  /// (Firebase) Update an area via id.
+  /// (Firebase) Delete a story via id.
+  Future<void> deleteStory({required String storyId}) async {
+    return _firebaseFirestore.collection('stories').doc(storyId).delete();
+  }
+
+  /// (Firebase) Update a story via id.
   Future<void> updateStory({required Story story}) async {
     return _firebaseFirestore
         .collection('stories')

@@ -20,6 +20,14 @@ class _ContactScreenState extends State<ContactScreen> {
   TextEditingController nameCont = TextEditingController();
 
   @override
+  void dispose() {
+    emailCont.dispose();
+    messageCont.dispose();
+    nameCont.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(isPortrait: true),
@@ -54,38 +62,20 @@ class _ContactScreenState extends State<ContactScreen> {
                               useDark: false,
                             ),
                             const SizedBox(height: 25),
-                            CustomInput(
-                              cont: nameCont,
+                            SimpleInput(
+                              controller: nameCont,
                               labelText: 'Name',
-                              onChanged: (value) {
-                                setState(() {
-                                  nameCont.text = value;
-                                });
-                              },
-                              onEnter: (_) {},
                             ),
                             const SizedBox(height: 15),
-                            CustomInput(
-                              cont: emailCont,
+                            SimpleInput(
+                              controller: emailCont,
                               labelText: 'Email',
-                              onChanged: (value) {
-                                setState(() {
-                                  emailCont.text = value;
-                                });
-                              },
-                              onEnter: (_) {},
                             ),
                             const SizedBox(height: 15),
-                            CustomInput(
-                              cont: messageCont,
+                            SimpleInput(
+                              controller: messageCont,
                               isMulti: true,
                               labelText: 'Message',
-                              onChanged: (value) {
-                                setState(() {
-                                  messageCont.text = value;
-                                });
-                              },
-                              onEnter: (_) {},
                             ),
                             const SizedBox(height: 40),
                             status == ContactStatus.submittting
@@ -96,12 +86,17 @@ class _ContactScreenState extends State<ContactScreen> {
                                       child: CircularProgressIndicator(),
                                     ),
                                   )
-                                : ElevatedButton(
-                                    onPressed:
-                                        status == ContactStatus.submittting
-                                        ? null
-                                        : () => submit(context),
-                                    child: Text('Send'),
+                                : SizedBox(
+                                    height: 50,
+                                    child: Center(
+                                      child: ElevatedButton(
+                                        onPressed:
+                                            status == ContactStatus.submittting
+                                            ? null
+                                            : () => submit(context),
+                                        child: Text('Send'),
+                                      ),
+                                    ),
                                   ),
                             const SizedBox(height: 40),
                           ],
@@ -117,21 +112,11 @@ class _ContactScreenState extends State<ContactScreen> {
 
   void clearInputs() {
     setState(() {
-      // clearInput = true;
-      // email = '';
       emailCont.clear();
-      // message = '';
       messageCont.clear();
-      // name = '';
       nameCont.clear();
       status = ContactStatus.initial;
     });
-
-    // await Future.delayed(const Duration(milliseconds: 100), () {
-    //   setState(() {
-    //     clearInput = false;
-    //   });
-    // });
   }
 
   void submit(BuildContext context) async {

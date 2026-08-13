@@ -12,6 +12,22 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool obscurePassword = false;
+  TextEditingController emailCont = TextEditingController();
+  TextEditingController passwordCont = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    emailCont.text = context.read<AuthCubit>().state.email ?? '';
+  }
+
+  @override
+  void dispose() {
+    emailCont.dispose();
+    passwordCont.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,16 +42,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
             return BlocListener<AuthCubit, AuthState>(
               listenWhen: (previous, current) =>
-                  // previous.status != current.status ||
                   previous.errorMessage != current.errorMessage,
               listener: (context, state) {
-                // if (state.status == AuthStatus.authenticated) {
-                //   print(
-                //     'TODO (?): nav here; but should be handled via AppRouter',
-                //   );
-                //   // clearInputs();
-                //   // avoid this?
-                // }
                 if (state.errorMessage != null && state.errorMessage != '') {
                   String errMsg = ErrorHelper().cleanUpMessage(
                     state.errorMessage,
@@ -53,6 +61,20 @@ class _AuthScreenState extends State<AuthScreen> {
                         context.read<AuthCubit>().reset();
                       },
                       child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (state.status == AuthStatus.authenticated) {
+                    return GestureDetector(
+                      onLongPress: () {
+                        context.read<AuthCubit>().logout();
+                      },
+                      child: Center(
+                        child: Icon(
+                          Icons.thumb_up_sharp,
+                          color: Theme.of(context).primaryColor,
+                          size: 48,
+                        ),
+                      ),
                     );
                   }
                   return Center(
@@ -84,9 +106,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             NeonPineapple(),
                             const SizedBox(height: 25),
-                            CustomInput(
+                            SimpleInput(
+                              controller: emailCont,
                               labelText: 'Email',
-                              initialValue: state.email,
                               onChanged: (value) => context
                                   .read<AuthCubit>()
                                   .updateLogin(email: value),
@@ -99,7 +121,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                   obscurePassword = !obscurePassword;
                                 });
                               },
-                              child: CustomInput(
+                              child: SimpleInput(
+                                controller: passwordCont,
                                 labelText: 'Password',
                                 obscureText: !obscurePassword,
                                 onChanged: (value) => context

@@ -9,8 +9,11 @@ class AppRouter {
   AppRouter(BuildContext context)
     : router = GoRouter(
         initialLocation: '/',
+        // Note: stream AuthCubit rather than the Firebase User based on logic
+        // in the _authGuard and when the two streams trigger _authGuard.
         refreshListenable: GoRouterRefreshStream(
           context.read<AuthCubit>().stream,
+          // context.read<AuthRepository>().user,
         ),
         redirect: (context, state) => _authGuard(context, state),
         routes: [
@@ -70,6 +73,17 @@ class AppRouter {
             ),
           ),
           GoRoute(
+            path: '/stage',
+            name: 'stage',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const StageScreen(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child),
+            ),
+          ),
+          GoRoute(
             path: '/story-writer',
             name: 'story-writer',
             pageBuilder: (context, state) => CustomTransitionPage(
@@ -85,7 +99,7 @@ class AppRouter {
 }
 
 String? _authGuard(BuildContext context, GoRouterState state) {
-  print('authGuard triggered');
+  // print('authGuard triggered');
   final authState = context.read<AuthCubit>().state;
   final path = state.matchedLocation;
 

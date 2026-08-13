@@ -9,6 +9,8 @@ class PageFlipper extends StatefulWidget {
   final double height;
   final double spineOffset;
   final double width;
+  final Function solve;
+  final Function onPromptToSolve;
   final Function? onPageTap;
   final int pageCount;
   final ValueChanged<int>? onPageChanged;
@@ -33,6 +35,8 @@ class PageFlipper extends StatefulWidget {
     required this.pageBuilder,
     required this.pageCount,
     // required this.pageImageCache,
+    required this.onPromptToSolve,
+    required this.solve,
     required this.spineOffset,
     required this.width,
     this.onPageChanged,
@@ -237,6 +241,7 @@ class PageFlipperState extends State<PageFlipper>
               behavior: HitTestBehavior.translucent,
               onHorizontalDragUpdate: onForwardDragUpdate,
               onHorizontalDragEnd: onForwardDragEnd,
+              onLongPress: () => widget.solve(),
               onTap: nextPage,
             ),
           ),
@@ -311,6 +316,7 @@ class PageFlipperState extends State<PageFlipper>
   void nextPage() {
     widget.onPageTap?.call();
 
+    if (!hasNext) widget.onPromptToSolve.call();
     if (!widget.canFlip || controller.isAnimating || !hasNext) return;
 
     setState(() {
@@ -330,6 +336,30 @@ class PageFlipperState extends State<PageFlipper>
       forward = false;
       isFlipping = true;
       currentPage -= 1;
+      controller.animateTo(1.0, curve: Curves.easeInOut).then((_) => commit());
+    });
+  }
+
+  void resetStory() {
+    setState(() {
+      forward = false;
+      isFlipping = true;
+      currentPage = 0;
+      controller
+          .animateTo(
+            1.0,
+            curve: Curves.easeInOut,
+            duration: Duration(milliseconds: 1000),
+          )
+          .then((_) => commit());
+    });
+  }
+
+  void showNewStory() {
+    setState(() {
+      forward = true;
+      isFlipping = true;
+      currentPage = 0;
       controller.animateTo(1.0, curve: Curves.easeInOut).then((_) => commit());
     });
   }

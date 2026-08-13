@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:go_router/go_router.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,11 +15,7 @@ class HomeScreen extends StatefulWidget {
 
 // TODO:
 // 1) Add a menu button that contains:
-// - Give new story
 // - Stumped, give answer
-// - Help / Contact
-// - Secret Admin login
-// - Restart story (?)
 // 2) On a correct solve, the rest of the story should be told with some victory
 // fanfare in the background. Player can keep reading or go on to the next story.
 // 3) At the end of the chapters, give the Player one last chance to solve or
@@ -30,13 +25,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool canProceed = false;
   bool hasPrev = false;
   bool hasShader = false;
+  bool isCyclingStory = false;
   bool isOpened = false;
   bool isVideoInitialized = false;
   bool showFloatingMenu = true;
   int chapterIndex = 0;
   int checkpointIndex = 0;
   int parchmentSeed = 0;
-  // List<String> story = [];
 
   final GlobalKey<PageFlipperState> storybookKey = GlobalKey();
 
@@ -60,8 +55,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     textController = AnimatedTextController();
 
     scrollTimer = Timer(Duration.zero, () {});
-
-    // story = Story.storyExample1.chapters;
   }
 
   @override
@@ -84,30 +77,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       listenWhen: (previous, current) =>
           previous.currentStory.id != current.currentStory.id,
       listener: (context, state) {
-        print('storyBlocListener triggered');
-        resetStory();
+        if (isOpened) {
+          // print('storyBlocListener triggered');
+          storybookKey.currentState?.showNewStory();
+          setState(() {
+            scrollController.dispose();
+            scrollController = ScrollController();
+
+            canProceed = true;
+            chapterIndex = 0;
+            checkpointIndex = 0;
+
+            textController.play();
+          });
+        }
       },
       child: BlocBuilder<StoryBloc, StoryState>(
         builder: (context, state) {
-          if (state.status == StoryStateStatus.loading) {
-            return Scaffold(
-              appBar: CustomAppBar(isPortrait: isPortrait),
-              endDrawer: CustomDrawer(resetStory: resetStory),
-              // TODO
-              body: SafeArea(child: Center(child: CircularProgressIndicator())),
-            );
-          }
           return Scaffold(
             appBar: CustomAppBar(isPortrait: isPortrait),
-            endDrawer: CustomDrawer(resetStory: resetStory),
+            endDrawer: CustomDrawer(
+              isStorybookOpen: isOpened,
+              resetStory: resetStory,
+              solveStory: () => solve(context, viaDrawer: true),
+            ),
             floatingActionButton: AnimatedOpacity(
               opacity: isOpened ? 1 : 0,
               duration: Duration(milliseconds: 500),
               child: BlocBuilder<SettingsCubit, SettingsState>(
                 builder: (_, settingsState) {
-                  return settingsState.showActionButtons
-                      ? buildStorybookActions(state.currentStory.chapters)
-                      : const SizedBox();
+                  return state.status == StoryStateStatus.loading ||
+                          !settingsState.showActionButtons
+                      ? const SizedBox()
+                      : buildStorybookActions(state.currentStory.chapters);
                 },
               ),
             ),
@@ -164,6 +166,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 scale: 0.1,
                               ),
                             ),
+                            canOpen: state.status != StoryStateStatus.loading,
                             pages: const SizedBox(),
                             onOpened: () {
                               setState(() {
@@ -182,6 +185,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           height: height,
                           layout: layout,
                           spineOffset: layout.spineOffset,
+                          solve: () => solve(context),
                           pageCount: state.currentStory.chapters.length,
                           pageBuilder:
                               (
@@ -208,9 +212,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     : const SizedBox(),
                               ),
                           onPageChanged: (value) {
-                            // print('onPageChanged: Page ${value + 1}');
                             setState(() {
-                              // scrollController.jumpTo(0);
                               scrollController.dispose();
                               scrollController = ScrollController();
 
@@ -226,12 +228,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             initializeScrollTimer();
                           },
                           onPageTap: () {
-                            // print('onPageTap!');
                             setState(() {
                               textController.pause();
                               canProceed = true;
                             });
                           },
+                          onPromptToSolve: () => promptToSolve(context),
                         ),
                       ],
                       !isPortrait
@@ -391,21 +393,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
+  void promptToSolve(BuildContext context) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('That\'s the last page.'),
+          action: SnackBarAction(
+            label: 'Care to solve?',
+            textColor: Theme.of(context).colorScheme.primary,
+            onPressed: () => solve(context),
+          ),
+        ),
+      );
+  }
+
   void resetStory() {
-    print('reset story');
+    storybookKey.currentState?.resetStory();
+
     setState(() {
-      // entrance.reset();
-      textController.pause();
       scrollController.dispose();
       scrollController = ScrollController();
-      canProceed = false;
-      hasPrev = false;
+
+      canProceed = true;
       chapterIndex = 0;
       checkpointIndex = 0;
-      textController.reset();
+
       textController.play();
     });
-    initializeScrollTimer();
+  }
+
+  void solve(BuildContext context, {bool? viaDrawer = false}) {
+    if (viaDrawer!) {
+      Navigator.of(context).pop();
+    }
+    showDialog(
+      context: context,
+      builder: (context) {
+        return SolveModal();
+      },
+    );
   }
 
   Widget buildChapterText(
@@ -495,7 +522,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   onPressed: chapterIndex < 1 || !canProceed
                       ? null
                       : () {
-                          // print('prev chp');
                           setState(() {
                             chapterIndex -= 1;
                           });
@@ -505,28 +531,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     flipX: true,
                     child: Icon(
                       Icons.auto_stories,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
+                      color: Theme.of(context).colorScheme.inverseSurface
+                          .withAlpha(canProceed ? 255 : 100),
                     ),
                   ),
                 ),
-          // TODO: delay showing solve until chapter 2 (?)
           FloatingActionButton(
             heroTag: 'solve',
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadiusGeometry.circular(100),
             ),
-            onPressed: !canProceed
-                ? null
-                : () {
-                    print('TODO: solve');
-                  },
+            onPressed: !canProceed ? null : () => solve(context),
             child: Icon(
               Icons.auto_awesome,
               color: Theme.of(
                 context,
-              ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
+              ).colorScheme.inverseSurface.withAlpha(canProceed ? 255 : 100),
             ),
           ),
           chapterIndex + 1 >= chapters.length
@@ -549,9 +569,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         },
                   child: Icon(
                     Icons.auto_stories,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onPrimary.withAlpha(canProceed ? 255 : 100),
+                    color: Theme.of(context).colorScheme.inverseSurface
+                        .withAlpha(canProceed ? 255 : 100),
                   ),
                 ),
         ],

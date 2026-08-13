@@ -16,9 +16,11 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
     : log = Logger(),
       super(StoryState()) {
     on<CreateStory>(_onCreateStory);
+    on<DeleteStory>(_onDeleteStory);
     on<GetStories>(_onGetStories);
     on<NewStory>(_onNewStory);
     on<UpdateNewStory>(_onUpdateNewStory);
+    on<UpdateStory>(_onUpdateStory);
 
     print('StoryBloc online');
     add(GetStories());
@@ -32,8 +34,8 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
     emit(state.copyWith(errorMessage: '', status: StoryStateStatus.updating));
 
     if (event.newStory.chapters.isEmpty ||
-        state.newStory.pov.isEmpty ||
-        state.newStory.title == '') {
+        event.newStory.pov.isEmpty ||
+        event.newStory.title == '') {
       emit(
         state.copyWith(
           errorMessage: event.newStory.title == ''
@@ -77,6 +79,40 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
     }
   }
 
+  Future<void> _onDeleteStory(
+    DeleteStory event,
+    Emitter<StoryState> emit,
+  ) async {
+    if (state.status == StoryStateStatus.updating) return;
+    emit(state.copyWith(errorMessage: '', status: StoryStateStatus.updating));
+
+    try {
+      await databaseRepository.deleteStory(storyId: event.storyId);
+
+      List<Story> storiesList = state.stories.toList();
+      int index = storiesList.indexWhere((story) => story.id == event.storyId);
+      if (index >= 0) {
+        storiesList.removeAt(index);
+      }
+
+      emit(
+        state.copyWith(
+          newStory: Story.emptyStory,
+          status: StoryStateStatus.updated,
+          stories: storiesList,
+        ),
+      );
+    } catch (err) {
+      log.e('CreateStory error', error: err);
+      emit(
+        state.copyWith(
+          errorMessage: 'There was an error deleting this story.',
+          status: StoryStateStatus.error,
+        ),
+      );
+    }
+  }
+
   Future<void> _onGetStories(GetStories event, Emitter<StoryState> emit) async {
     if (state.status == StoryStateStatus.loading) return;
     emit(state.copyWith(status: StoryStateStatus.loading));
@@ -102,6 +138,64 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
       );
     } catch (err) {
       log.e('GetStories error', error: err);
+      emit(state.copyWith(status: StoryStateStatus.error));
+    }
+  }
+
+  Future<void> _onUpdateStory(
+    UpdateStory event,
+    Emitter<StoryState> emit,
+  ) async {
+    if (state.status == StoryStateStatus.updating) return;
+    emit(state.copyWith(errorMessage: '', status: StoryStateStatus.updating));
+
+    if (event.editedStory.chapters.isEmpty ||
+        event.editedStory.pov.isEmpty ||
+        event.editedStory.title == '') {
+      emit(
+        state.copyWith(
+          errorMessage: event.editedStory.title == ''
+              ? 'Add a title..'
+              : event.editedStory.pov.isEmpty
+              ? 'Add a POV..'
+              : event.editedStory.chapters.isEmpty
+              ? 'Add chapters..'
+              : 'Something went wrong.',
+          status: StoryStateStatus.error,
+        ),
+      );
+      return;
+    }
+
+    DateTime now = DateTime.now();
+    List<Story> storiesList = state.stories.toList();
+    Story updatedStory = Story.emptyStory;
+
+    try {
+      await databaseRepository.updateStory(
+        story: event.editedStory.copyWith(
+          // createdOn: event.editedStory.createdOn ?? now,
+          updatedOn: now,
+        ),
+      );
+      updatedStory = event.editedStory;
+      int index = storiesList.indexWhere(
+        (story) => story.id == updatedStory.id,
+      );
+      if (index >= 0) {
+        storiesList[index] = updatedStory;
+      }
+      storiesList.sort((a, b) => a.title.compareTo(b.title));
+
+      emit(
+        state.copyWith(
+          newStory: updatedStory,
+          status: StoryStateStatus.updated,
+          stories: storiesList,
+        ),
+      );
+    } catch (err) {
+      log.e('UpdateStory error', error: err);
       emit(state.copyWith(status: StoryStateStatus.error));
     }
   }
