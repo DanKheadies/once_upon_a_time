@@ -15,14 +15,15 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
   StoryBloc({required this.databaseRepository})
     : log = Logger(),
       super(StoryState()) {
+    on<CacheTab>(_onCacheTab);
     on<CreateStory>(_onCreateStory);
     on<DeleteStory>(_onDeleteStory);
     on<GetStories>(_onGetStories);
+    on<GetStoryById>(_onGetStoryById);
     on<NewStory>(_onNewStory);
     on<UpdateNewStory>(_onUpdateNewStory);
     on<UpdateStory>(_onUpdateStory);
 
-    print('StoryBloc online');
     add(GetStories());
   }
 
@@ -115,7 +116,7 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
 
   Future<void> _onGetStories(GetStories event, Emitter<StoryState> emit) async {
     if (state.status == StoryStateStatus.loading) return;
-    emit(state.copyWith(status: StoryStateStatus.loading));
+    emit(state.copyWith(errorMessage: '', status: StoryStateStatus.loading));
 
     List<Story> storiesList = [];
     Story activeStory = Story.emptyStory;
@@ -200,6 +201,28 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
     }
   }
 
+  void _onCacheTab(CacheTab event, Emitter<StoryState> emit) {
+    emit(state.copyWith(tabType: event.tab));
+  }
+
+  void _onGetStoryById(GetStoryById event, Emitter<StoryState> emit) {
+    List<Story> storiesList = state.stories.toList();
+    int index = storiesList.indexWhere((story) => story.id == event.storyId);
+    Story urlStory = Story.emptyStory;
+
+    if (index >= 0) {
+      urlStory = storiesList[index];
+    }
+
+    emit(
+      state.copyWith(
+        currentStory: urlStory,
+        errorMessage: index >= 0 ? null : 'Unable to find that story.',
+        status: index >= 0 ? StoryStateStatus.loaded : StoryStateStatus.error,
+      ),
+    );
+  }
+
   void _onNewStory(NewStory event, Emitter<StoryState> emit) {
     List<Story> storiesList = state.stories.toList();
     int index = storiesList.indexWhere((story) => story.id == event.storyId);
@@ -207,12 +230,11 @@ class StoryBloc extends HydratedBloc<StoryEvent, StoryState> {
 
     if (index >= 0) {
       storiesList.removeAt(index);
-      int randoIndex = Random().nextInt(storiesList.length);
-      newStory = storiesList[randoIndex];
-      print('new current: ${newStory.title}');
     }
+    int randoIndex = Random().nextInt(storiesList.length);
+    newStory = storiesList[randoIndex];
 
-    emit(state.copyWith(currentStory: newStory));
+    emit(state.copyWith(currentStory: newStory, errorMessage: ''));
   }
 
   void _onUpdateNewStory(UpdateNewStory event, Emitter<StoryState> emit) {

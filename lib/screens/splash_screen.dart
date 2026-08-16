@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     controller = AnimatedTextController();
 
-    timer = Timer(const Duration(seconds: 4), () => context.goNamed('home'));
+    timer = Timer(const Duration(seconds: 4), () => context.goNamed('story'));
   }
 
   @override
@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen>
       body: InkWell(
         onTap: () {
           timer.cancel();
-          context.goNamed('home');
+          context.goNamed('story');
         },
         child: Center(
           child: Padding(
@@ -64,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
               controller: controller,
               onTap: () {
                 timer.cancel();
-                context.goNamed('home');
+                context.goNamed('story');
               },
             ),
           ),

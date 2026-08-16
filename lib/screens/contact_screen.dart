@@ -7,7 +7,9 @@ import 'package:once_upon_a_time/barrel.dart';
 enum ContactStatus { error, initial, submittting, success }
 
 class ContactScreen extends StatefulWidget {
-  const ContactScreen({super.key});
+  final String? extraInfo;
+
+  const ContactScreen({super.key, this.extraInfo});
 
   @override
   State<ContactScreen> createState() => _ContactScreenState();
@@ -18,6 +20,15 @@ class _ContactScreenState extends State<ContactScreen> {
   TextEditingController emailCont = TextEditingController();
   TextEditingController messageCont = TextEditingController();
   TextEditingController nameCont = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.extraInfo != null && widget.extraInfo != '') {
+      messageCont.text = 'There was an issue with: ${widget.extraInfo}';
+    }
+  }
 
   @override
   void dispose() {
@@ -35,17 +46,11 @@ class _ContactScreenState extends State<ContactScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // double height = constraints.maxHeight;
             double width = constraints.maxWidth;
 
             return Center(
               child: status == ContactStatus.error
-                  ? Texxt(
-                      'Something went wrong.',
-                      // style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      //   color: Theme.of(context).colorScheme.surface,
-                      // ),
-                    )
+                  ? Texxt('Something went wrong.')
                   : Container(
                       padding: const EdgeInsets.all(25),
                       width: width < 850 ? width : 500,
@@ -53,14 +58,7 @@ class _ContactScreenState extends State<ContactScreen> {
                         physics: NeverScrollableScrollPhysics(),
                         child: Column(
                           children: [
-                            Texxt(
-                              'Need to reach us?',
-                              // style: Theme.of(context).textTheme.displaySmall!
-                              //     .copyWith(
-                              //       color: Theme.of(context).colorScheme.surface,
-                              //     ),
-                              useDark: false,
-                            ),
+                            Texxt('Need to reach us?', useDark: false),
                             const SizedBox(height: 25),
                             SimpleInput(
                               controller: nameCont,

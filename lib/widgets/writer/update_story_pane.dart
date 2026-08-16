@@ -16,12 +16,14 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
   TextEditingController chaptersCont = TextEditingController();
   TextEditingController povCont = TextEditingController();
   TextEditingController povHintsCont = TextEditingController();
+  TextEditingController titleApproxCont = TextEditingController();
   TextEditingController titleCont = TextEditingController();
   TextEditingController titleHintsCont = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+
     titleCont.text = context.read<StoryBloc>().state.newStory.title;
   }
 
@@ -30,6 +32,7 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
     chaptersCont.dispose();
     povCont.dispose();
     povHintsCont.dispose();
+    titleApproxCont.dispose();
     titleCont.dispose();
     titleHintsCont.dispose();
     super.dispose();
@@ -43,18 +46,12 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
           (previous.status == StoryStateStatus.updating &&
               current.status == StoryStateStatus.updated),
       listener: (context, state) {
-        if (state.errorMessage != null && state.errorMessage != '') {
+        if (state.errorMessage != '') {
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage ?? 'Something went wrong.'),
-              ),
-            );
+            ..showSnackBar(SnackBar(content: Text(state.errorMessage)));
         }
         if (state.status == StoryStateStatus.updated) {
-          // print('successful update; clear out');
-          initializeControllers();
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(SnackBar(content: Text('Your story was updated.')));
@@ -69,7 +66,8 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
                 : SingleChildScrollView(
                     child: Column(
                       children: [
-                        // TODO: search
+                        SizedBox(height: 25, width: widget.width),
+                        Text('TODO: search / filter'),
                         SizedBox(height: 25, width: widget.width),
                         Container(
                           padding: rowPadding,
@@ -77,8 +75,6 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
                           child: SimpleInput(
                             controller: titleCont,
                             labelText: 'Title',
-                            // initialValue: state.newStory.title,
-                            // cont: titleCont,
                             onChanged: (value) {
                               context.read<StoryBloc>().add(
                                 UpdateNewStory(
@@ -270,6 +266,104 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
                                   Flexible(
                                     flex: 1,
                                     child: SimpleInput(
+                                      controller: titleApproxCont,
+                                      labelText: 'Title Approximates',
+                                      onEnter: (_) => addTitleApprox(
+                                        context,
+                                        state.newStory,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  IconButton(
+                                    icon: Icon(Icons.add),
+                                    onPressed: () =>
+                                        addTitleApprox(context, state.newStory),
+                                  ),
+                                ],
+                              ),
+                              if (state.newStory.titleApproximates != null) ...[
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemCount:
+                                      state.newStory.titleApproximates!.length,
+                                  itemBuilder: (context, index) => ListTile(
+                                    title: Text(
+                                      state.newStory.titleApproximates![index],
+                                    ),
+                                    trailing: IconButton(
+                                      icon: Icon(Icons.remove),
+                                      onPressed: () {
+                                        List<String> titleApproxList = state
+                                            .newStory
+                                            .titleApproximates!
+                                            .toList();
+                                        titleApproxList.remove(
+                                          state
+                                              .newStory
+                                              .titleApproximates![index],
+                                        );
+
+                                        context.read<StoryBloc>().add(
+                                          UpdateNewStory(
+                                            newStory: state.newStory.copyWith(
+                                              titleApproximates:
+                                                  titleApproxList,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    contentPadding: const EdgeInsets.only(
+                                      left: 16,
+                                    ),
+                                    onLongPress: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return EditModal(
+                                            content: state
+                                                .newStory
+                                                .titleApproximates![index],
+                                            index: index,
+                                            newStory: state.newStory,
+                                            onUpdate: (newValue) {
+                                              List<String> updatedTitleApprox =
+                                                  state.newStory.chapters
+                                                      .toList();
+                                              updatedTitleApprox[index] =
+                                                  newValue;
+                                              context.read<StoryBloc>().add(
+                                                UpdateNewStory(
+                                                  newStory: state.newStory
+                                                      .copyWith(
+                                                        titleApproximates:
+                                                            updatedTitleApprox,
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: rowPadding,
+                          width: widget.width < 850 ? widget.width : 500,
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    flex: 1,
+                                    child: SimpleInput(
                                       controller: titleHintsCont,
                                       labelText: 'Title Hints',
                                       onEnter: (_) => addTitleHints(
@@ -446,8 +540,8 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 25, width: widget.width),
                         if (state.stories.contains((state.newStory))) ...[
+                          SizedBox(height: 25, width: widget.width),
                           HyperlinkText(
                             text: 'Delete',
                             onTap: () {
@@ -552,6 +646,24 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
     }
   }
 
+  void addTitleApprox(BuildContext context, Story newStory) {
+    if (titleApproxCont.text != '') {
+      List<String> titleApproxList = (newStory.titleApproximates ?? [])
+          .toList();
+      titleApproxList.add(titleApproxCont.text);
+
+      context.read<StoryBloc>().add(
+        UpdateNewStory(
+          newStory: newStory.copyWith(titleApproximates: titleApproxList),
+        ),
+      );
+
+      setState(() {
+        titleApproxCont.clear();
+      });
+    }
+  }
+
   void addTitleHints(BuildContext context, Story newStory) {
     if (titleHintsCont.text != '') {
       List<String> titleHintsList = (newStory.titleHints ?? []).toList();
@@ -565,15 +677,5 @@ class _UpdateStoryPaneState extends State<UpdateStoryPane> {
         titleHintsCont.clear();
       });
     }
-  }
-
-  void initializeControllers() {
-    setState(() {
-      chaptersCont = TextEditingController();
-      povCont = TextEditingController();
-      povHintsCont = TextEditingController();
-      titleCont = TextEditingController();
-      titleHintsCont = TextEditingController();
-    });
   }
 }

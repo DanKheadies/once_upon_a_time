@@ -1,7 +1,6 @@
-import 'dart:ui';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
 class StageScreen extends StatefulWidget {
@@ -12,217 +11,195 @@ class StageScreen extends StatefulWidget {
 }
 
 class _StageScreenState extends State<StageScreen> {
-  Size gridDimensions = Size(5, 5);
-  @override
-  void initState() {
-    super.initState();
-  }
+  bool useBlack = false;
+  List<int> activatedIndexes = [];
+  Size gridDimensions = Size(5, 1);
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  final GlobalKey<ScaffoldState> stageKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: stageKey,
       appBar: AppBar(
         title: Texxt('Pineapple Cabaret', isOlde: true, useDark: false),
+        // leading: IconButton(
+        //   onPressed: () {
+        //     clearGrid();
+        //   },
+        //   icon: Icon(Icons.refresh),
+        // ),
         leading: IconButton(
-          icon: Icon(Icons.chevron_left),
+          icon: Icon(Icons.menu_book),
           onPressed: () {
-            context.goNamed('home');
+            stageKey.currentState?.openDrawer();
           },
         ),
-        actions: [IconButton(icon: Icon(Icons.abc), onPressed: () {})],
+        actions: [
+          IconButton(
+            icon: Icon(useBlack ? Icons.toggle_off : Icons.toggle_on),
+            onPressed: () {
+              setState(() {
+                useBlack = !useBlack;
+              });
+            },
+          ),
+          IconButton(
+            onPressed: () {
+              clearGrid();
+            },
+            icon: Icon(Icons.refresh),
+          ),
+        ],
       ),
+      drawer: CustomDrawer(isStorybook: false),
       body: SafeArea(
-        child: ScrollConfiguration(
-          behavior: const MaterialScrollBehavior().copyWith(
-            dragDevices: {
-              PointerDeviceKind.touch,
-              PointerDeviceKind.mouse,
-              PointerDeviceKind.trackpad,
-              PointerDeviceKind.stylus,
-            },
-          ),
-          child: RefreshIndicator(
-            onRefresh: () async {
-              print('refresh');
-            },
-            child: ListView.builder(
-              itemCount: 20,
-              itemBuilder: (context, index) => Container(
-                width: double.infinity,
-                height: 100,
-                color: index.isEven
-                    ? Colors.blue.shade100
-                    : Colors.red.shade100,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double height = constraints.maxHeight;
+            double width = constraints.maxWidth;
+
+            bool isPortrait = height > width;
+            double dependDimension = isPortrait ? width : height;
+            double gridUnitLength = width / gridDimensions.width;
+
+            print('($width, $height)');
+            print('dependDimension: $dependDimension');
+            print('grid unit: ($gridUnitLength, $gridUnitLength)');
+
+            return GestureDetector(
+              onTapDown: (details) => checkGridUnit(
+                gridUnitLength: gridUnitLength,
+                height: height,
+                tapDetails: details,
               ),
-            ),
-          ),
+              onHorizontalDragUpdate: (details) => checkGridUnit(
+                gridUnitLength: gridUnitLength,
+                height: height,
+                dragDetails: details,
+              ),
+              onVerticalDragUpdate: (details) => checkGridUnit(
+                gridUnitLength: gridUnitLength,
+                height: height,
+                dragDetails: details,
+              ),
+              child: Container(
+                height: height,
+                width: width,
+                color: isPortrait ? Colors.red.shade100 : Colors.blue.shade100,
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: gridUnitLength,
+                    // maxCrossAxisExtent: 50, // width / X = gridCount.width
+                    // width = gridCount.width * X
+                    // width / gridCount.width = x
+                  ),
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount:
+                      ((height / gridUnitLength) * gridDimensions.width)
+                          .toInt() +
+                      1,
+                  itemBuilder: (context, index) {
+                    bool isTouched = activatedIndexes.contains(index);
+                    // if (isTouched) {
+                    //   print('touched at $index');
+                    // }
+
+                    return GridUnit(
+                      // color: Colors.black,
+                      color: useBlack ? Colors.black : getRandomColor(),
+                      height: dependDimension / gridDimensions.height,
+                      id: '$index',
+                      isActivated: isTouched,
+                      width: dependDimension / gridDimensions.width,
+                    );
+                  },
+                ),
+              ),
+            );
+          },
         ),
       ),
-      // body: SafeArea(
-      //   child: LayoutBuilder(
-      //     builder: (context, constraints) {
-      //       double height = constraints.maxHeight;
-      //       double width = constraints.maxWidth;
-
-      //       bool isPortrait = height > width;
-      //       double dependDimension = isPortrait ? width : height;
-
-      //       print('($width, $height)');
-      //       print('dependDimension: $dependDimension');
-
-      //       return GestureDetector(
-      //         // onTapMove: (details) {
-      //         //   print('DERP');
-      //         // },
-      //         // onTap: () {
-      //         //   print('derp');
-      //         // },
-      //         // onHorizontalDragUpdate: (details) {
-      //         //   print('drag hori via global: ${details.globalPosition}');
-      //         //   // print('drag hor via local: ${details.localPosition}');
-      //         // },
-      //         // onVerticalDragUpdate: (details) {
-      //         //   print('drag vert via vert: ${details.globalPosition}');
-      //         // },
-      //         child: Container(
-      //           height: height,
-      //           width: width,
-      //           color: isPortrait ? Colors.red.shade100 : Colors.blue.shade100,
-      //           child: GridView.count(
-      //             shrinkWrap: true,
-      //             physics: NeverScrollableScrollPhysics(),
-      //             // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-      //             //   // crossAxisCount: (dependDimension / gridDimensions.width)
-      //             //   //     .toInt(),
-      //             //   crossAxisCount: gridDimensions.width.toInt(),
-      //             //   // mainAxisExtent: gridDimensions.height.toInt()
-
-      //             // ),
-      //             crossAxisCount: gridDimensions.width.toInt(),
-      //             children: [
-      //               Container(
-      //                 width: 100,
-      //                 height: 100,
-      //                 color: Colors.green.shade100,
-      //               ),
-      //             ],
-      //             // itemBuilder: (context, index) {
-      //             //   return Container(
-      //             //     width: 100,
-      //             //     height: 100,
-      //             //     decoration: BoxDecoration(
-      //             //       border: BoxBorder.all(color: Colors.black12),
-      //             //       color: Colors.green.shade100,
-      //             //     ),
-      //             //   );
-      //             // },
-      //           ),
-      //           // child: Column(
-      //           //   children: [
-      //           //     Container(
-      //           //       width: dependDimension / gridDimensions.width,
-      //           //       height: dependDimension / gridDimensions.height,
-      //           //       color: Colors.purple.shade100,
-      //           //     ),
-      //           //     // Container(height: 100, color: Colors.green.shade100),
-      //           //     // Row(
-      //           //     //   children: [
-      //           //     //     Container(
-      //           //     //       width: dependDimension / gridDimensions.width,
-      //           //     //       height: dependDimension / gridDimensions.height,
-      //           //     //       color: Colors.green.shade200,
-      //           //     //     ),
-      //           //     //     Container(
-      //           //     //       width: dependDimension / gridDimensions.width,
-      //           //     //       height: dependDimension / gridDimensions.height,
-      //           //     //       color: Colors.green.shade100,
-      //           //     //     ),
-      //           //     //     Container(
-      //           //     //       width: dependDimension / gridDimensions.width,
-      //           //     //       height: dependDimension / gridDimensions.height,
-      //           //     //       color: Colors.green.shade300,
-      //           //     //     ),
-      //           //     //   ],
-      //           //     // ),
-      //           //     Row(
-      //           //       children: [
-      //           //         SizedBox(
-      //           //           width: width,
-      //           //           height: dependDimension / gridDimensions.height,
-      //           //           child: ListView.builder(
-      //           //             shrinkWrap: true,
-      //           //             physics: NeverScrollableScrollPhysics(),
-      //           //             itemCount: gridDimensions.width.toInt(),
-      //           //             itemBuilder: (context, index) => Container(
-      //           //               width: dependDimension / gridDimensions.width,
-      //           //               height: dependDimension / gridDimensions.height,
-      //           //               color: index.isEven
-      //           //                   ? Colors.yellow.shade100
-      //           //                   : Colors.green.shade100,
-      //           //             ),
-      //           //           ),
-      //           //         ),
-      //           //       ],
-      //           //     ),
-      //           //     GridUnit(
-      //           //       color: Colors.amber.shade100,
-      //           //       id: 'alpha',
-      //           //       height: 100,
-      //           //       width: 100,
-      //           //     ),
-      //           //     Row(
-      //           //       mainAxisAlignment: MainAxisAlignment.center,
-      //           //       children: [
-      //           //         Container(
-      //           //           width: 100,
-      //           //           height: 100,
-      //           //           color: Colors.pink.shade100,
-      //           //         ),
-      //           //         Container(
-      //           //           width: 100,
-      //           //           height: 100,
-      //           //           color: Colors.brown.shade100,
-      //           //         ),
-      //           //         // Container(
-      //           //         //   width: 100,
-      //           //         //   height: 100,
-      //           //         //   color: Colors.teal.shade100,
-      //           //         // ),
-      //           //         GridUnit(height: 100, id: 'beta', width: 100),
-      //           //         Container(
-      //           //           width: 100,
-      //           //           height: 100,
-      //           //           color: Colors.orange.shade100,
-      //           //         ),
-      //           //         Container(
-      //           //           width: 100,
-      //           //           height: 100,
-      //           //           color: Colors.blueGrey.shade100,
-      //           //         ),
-      //           //       ],
-      //           //     ),
-      //           //     Container(
-      //           //       width: 100,
-      //           //       height: 100,
-      //           //       color: Colors.lime.shade100,
-      //           //     ),
-      //           //   ],
-      //           // ),
-      //         ),
-      //       );
-      //     },
-      //   ),
-      // ),
     );
+  }
+
+  Color getRandomColor() {
+    final Random random = Random();
+    return Color.fromARGB(
+      255, // Alpha (Full opacity)
+      random.nextInt(256), // Red (0-255)
+      random.nextInt(256), // Green (0-255)
+      random.nextInt(256), // Blue (0-255)
+    );
+  }
+
+  int getGridIndex({
+    required double x,
+    required double y,
+    // required double gridWidth,
+    // required double gridHeight,
+    required double gridUnitLength,
+    required int numCols,
+    required int numRows,
+  }) {
+    final cellWidth = gridUnitLength; // gridWidth / numCols;
+    final cellHeight = gridUnitLength; // gridHeight / numRows;
+
+    final col = (x / cellWidth).floor().clamp(0, numCols - 1);
+    final row = (y / cellHeight).floor().clamp(0, numRows - 1);
+
+    return row * numCols + col;
+  }
+
+  void checkGridUnit({
+    required double gridUnitLength,
+    required double height,
+    TapDownDetails? tapDetails,
+    DragUpdateDetails? dragDetails,
+  }) {
+    if (dragDetails != null) {
+      int gridIndex = getGridIndex(
+        x: dragDetails.localPosition.dx,
+        y: dragDetails.localPosition.dy,
+        gridUnitLength: gridUnitLength,
+        numCols: gridDimensions.width.toInt(),
+        numRows: (height / gridUnitLength).toInt() + 1,
+      );
+      // print(gridIndex);
+      if (!activatedIndexes.contains(gridIndex)) {
+        setState(() {
+          activatedIndexes.add(gridIndex);
+        });
+      }
+    }
+    if (tapDetails != null) {
+      int gridIndex = getGridIndex(
+        x: tapDetails.localPosition.dx,
+        y: tapDetails.localPosition.dy,
+        gridUnitLength: gridUnitLength,
+        numCols: gridDimensions.width.toInt(),
+        numRows: (height / gridUnitLength).toInt() + 1,
+      );
+      // print(gridIndex);
+      if (!activatedIndexes.contains(gridIndex)) {
+        setState(() {
+          activatedIndexes.add(gridIndex);
+        });
+      }
+    }
+  }
+
+  void clearGrid() {
+    setState(() {
+      activatedIndexes = [];
+    });
   }
 }
 
-class GridUnit extends StatelessWidget {
+class GridUnit extends StatefulWidget {
+  final bool isActivated;
+  final bool? showText;
+  final Color? borderColor;
   final Color? color;
   final double height;
   final double width;
@@ -232,23 +209,84 @@ class GridUnit extends StatelessWidget {
     super.key,
     required this.height,
     required this.id,
+    required this.isActivated,
     required this.width,
+    this.borderColor,
     this.color = Colors.transparent,
+    this.showText = true,
   });
 
   @override
+  State<GridUnit> createState() => _GridUnitState();
+}
+
+class _GridUnitState extends State<GridUnit> {
+  late Color seededColor;
+
+  @override
+  void initState() {
+    super.initState();
+
+    seededColor = widget.color!;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // TODO: visual (light up, depress, etc), track by id, timers, et al.
-        print(
-          'id: $id${color != Colors.transparent ? ' (color: ${color.toString()})' : ''}',
-        );
-      },
-      // onHorizontalDragUpdate: (details) {
-      //   print('drag @ $id');
-      // },
-      child: Container(height: height, width: width, color: color),
+    return Container(
+      decoration: BoxDecoration(
+        border: widget.borderColor != null
+            ? Border.all(color: widget.borderColor!)
+            : null,
+        color: widget.isActivated ? Colors.transparent : widget.color,
+      ),
+      height: widget.height,
+      width: widget.width,
+      child: widget.showText!
+          ? Center(
+              child: Text(widget.id, style: TextStyle(color: Colors.black45)),
+            )
+          : null,
     );
+    // return GestureDetector(
+    //   onTapDown: (details) {
+    //     print('tap down via ${widget.id}');
+    //     // if (seededColor != Colors.transparent) {
+    //     //   setState(() {
+    //     //     seededColor = Colors.transparent;
+    //     //   });
+    //     // }
+    //     if (!isActivated) {
+    //       setState(() {
+    //         isActivated = true;
+    //       });
+    //     }
+    //   },
+    //   onTap: () {
+    //     // TODO: visual (light up, depress, etc), track by id, timers, et al.
+    //     print(
+    //       'id: ${widget.id}${widget.color != Colors.transparent ? ' (color: ${widget.color.toString()})' : ''}',
+    //     );
+    //   },
+    //   // onHorizontalDragUpdate: (details) {
+    //   //   print('drag @ $id');
+    //   // },
+    //   child: Container(
+    //     decoration: BoxDecoration(
+    //       border: widget.borderColor != null
+    //           ? Border.all(color: widget.borderColor!)
+    //           : null,
+    //       color: isActivated || widget.isActivated
+    //           ? Colors.transparent
+    //           : widget.color,
+    //     ),
+    //     height: widget.height,
+    //     width: widget.width,
+    //     child: widget.showText!
+    //         ? Center(
+    //             child: Text(widget.id, style: TextStyle(color: Colors.black45)),
+    //           )
+    //         : null,
+    //   ),
+    // );
   }
 }

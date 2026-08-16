@@ -6,14 +6,8 @@ import 'package:once_upon_a_time/barrel.dart';
 class ReadStoriesPane extends StatefulWidget {
   final double height;
   final double width;
-  final Function(Story) updateStory;
 
-  const ReadStoriesPane({
-    super.key,
-    required this.height,
-    required this.updateStory,
-    required this.width,
-  });
+  const ReadStoriesPane({super.key, required this.height, required this.width});
 
   @override
   State<ReadStoriesPane> createState() => _ReadStoriesPaneState();
@@ -43,7 +37,8 @@ class _ReadStoriesPaneState extends State<ReadStoriesPane> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // TODO: filtering & search tools
+                SizedBox(height: 25, width: widget.width),
+                Text('TODO: search / filter'),
                 SizedBox(height: 25, width: widget.width),
                 Container(
                   padding: rowPadding,
@@ -70,29 +65,16 @@ class _ReadStoriesPaneState extends State<ReadStoriesPane> {
                           trailing: IconButton(
                             icon: Icon(Icons.edit),
                             onPressed: () {
-                              // TODO: queue up UpdateStory
-                              // Switch tab to Update
-                              print(context.read<AuthCubit>().state.authUser);
                               context.read<StoryBloc>().add(
                                 UpdateNewStory(newStory: state.stories[index]),
                               );
-                              widget.updateStory(state.stories[index]);
+                              context.read<StoryBloc>().add(
+                                CacheTab(tab: WriterTabType.update),
+                              );
                             },
                           ),
                           childrenPadding: const EdgeInsets.only(left: 16),
                           children: [
-                            // if (state.stories[index].isArchived != null &&
-                            //     state.stories[index].isArchived!) ...[
-                            //   StoryDetailsRow(
-                            //     label: 'isArchived',
-                            //     value: 'yes, its inactive',
-                            //     width: calcWidth,
-                            //   ),
-                            // ],
-                            // if (state.stories[index].isArchived != null &&
-                            //     state.stories[index].isArchived!) ...[
-                            //       TextButton()
-                            //     ],
                             StoryDetailsRow(
                               label: 'id',
                               value: state.stories[index].id,
@@ -144,6 +126,19 @@ class _ReadStoriesPaneState extends State<ReadStoriesPane> {
                                   : '',
                               width: calcWidth,
                             ),
+                            if (state.stories[index].titleApproximates !=
+                                    null &&
+                                state
+                                    .stories[index]
+                                    .titleApproximates!
+                                    .isNotEmpty) ...[
+                              StoryDetailsRow(
+                                label: 'title approximates',
+                                value: '',
+                                values: state.stories[index].titleApproximates,
+                                width: calcWidth,
+                              ),
+                            ],
                             if (state.stories[index].titleHints != null &&
                                 state
                                     .stories[index]

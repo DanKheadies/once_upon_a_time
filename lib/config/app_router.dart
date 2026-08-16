@@ -40,11 +40,24 @@ class AppRouter {
             ),
           ),
           GoRoute(
+            path: '/contact/:extraInfo',
+            name: 'contact/:extraInfo',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: ContactScreen(
+                extraInfo: state.pathParameters['extraInfo'],
+              ),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child),
+            ),
+          ),
+          GoRoute(
             path: '/contact',
             name: 'contact',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const ContactScreen(),
+              child: ContactScreen(extraInfo: null),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) =>
                       FadeTransition(opacity: animation, child: child),
@@ -62,22 +75,33 @@ class AppRouter {
             ),
           ),
           GoRoute(
-            path: '/home',
-            name: 'home',
+            path: '/stage',
+            name: 'stage',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const HomeScreen(),
+              child: const StageScreen(),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) =>
                       FadeTransition(opacity: animation, child: child),
             ),
           ),
           GoRoute(
-            path: '/stage',
-            name: 'stage',
+            path: '/story/:storyId',
+            name: 'story/:storyId',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const StageScreen(),
+              child: StoryScreen(storyId: state.pathParameters['storyId']),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) =>
+                      FadeTransition(opacity: animation, child: child),
+            ),
+          ),
+          GoRoute(
+            path: '/story',
+            name: 'story',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: StoryScreen(storyId: null),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) =>
                       FadeTransition(opacity: animation, child: child),
@@ -99,18 +123,27 @@ class AppRouter {
 }
 
 String? _authGuard(BuildContext context, GoRouterState state) {
-  // print('authGuard triggered');
   final authState = context.read<AuthCubit>().state;
-  final path = state.matchedLocation;
+  final path = state.fullPath;
 
-  const publicPaths = {'/', '/auth', '/contact', '/error', '/home'};
+  const publicPaths = {
+    '/',
+    '/auth',
+    '/contact',
+    '/contact/:extraInfo',
+    '/error',
+    '/story',
+    '/story/:storyId',
+  };
   final isPublic = publicPaths.contains(path);
 
   // Still resolving, don't bounce yet
-  if (authState.status == AuthStatus.unknown) return null;
+  // if (authState.status == AuthStatus.unknown) return null;
 
   // print('not unknown');
-  if (authState.status == AuthStatus.unauthenticated && !isPublic) {
+  if ((authState.status == AuthStatus.unauthenticated ||
+          authState.status == AuthStatus.unknown) &&
+      !isPublic) {
     // print('unauth && not public');
     return '/auth';
   }

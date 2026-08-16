@@ -10,7 +10,6 @@ class DatePicker extends StatefulWidget {
   final FocusNode? node;
   final Function(DateTime?) onSave;
   final String label;
-  // final String? hasError;
   final String? initValue;
   final TextEditingController? cont;
 
@@ -19,7 +18,6 @@ class DatePicker extends StatefulWidget {
     required this.label,
     required this.onSave,
     this.cont,
-    // this.hasError,
     this.initValue,
     this.isDisabled = false,
     this.node,
@@ -85,13 +83,6 @@ class _DatePickerState extends State<DatePicker> {
                 labelText: isEnteringDate && date == null
                     ? 'mm/dd/yyyy'
                     : widget.label,
-                // initialValue: dateController.text,
-                // cont: dateController,
-                // node: dateNode,
-                // hasError: widget.hasError,
-                // isDisabled: widget.isDisabled,
-                // onChanged: (value) {},
-                // onEnter: (value) {},
               ),
             ),
             const SizedBox(width: 5),

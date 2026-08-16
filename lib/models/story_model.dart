@@ -8,6 +8,7 @@ class Story extends Equatable {
   final List<String> chapters;
   final List<String> pov;
   final List<String>? povHints;
+  final List<String>? titleApproximates;
   final List<String>? titleHints;
   final String createdBy;
   final String id;
@@ -23,6 +24,7 @@ class Story extends Equatable {
     this.createdOn,
     this.isArchived = false,
     this.povHints = const [],
+    this.titleApproximates = const [],
     this.titleHints = const [],
     this.updatedOn,
   });
@@ -37,6 +39,7 @@ class Story extends Equatable {
     pov,
     povHints,
     title,
+    titleApproximates,
     titleHints,
     updatedOn,
   ];
@@ -48,6 +51,7 @@ class Story extends Equatable {
     List<String>? chapters,
     List<String>? pov,
     List<String>? povHints,
+    List<String>? titleApproximates,
     List<String>? titleHints,
     String? createdBy,
     String? id,
@@ -62,6 +66,7 @@ class Story extends Equatable {
       pov: pov ?? this.pov,
       povHints: povHints ?? this.povHints,
       title: title ?? this.title,
+      titleApproximates: titleApproximates ?? this.titleApproximates,
       titleHints: titleHints ?? this.titleHints,
       updatedOn: updatedOn ?? this.updatedOn,
     );
@@ -94,6 +99,11 @@ class Story extends Equatable {
           ? (json['povHints'] as List).map((hint) => hint as String).toList()
           : null,
       title: json['title'],
+      titleApproximates: json['titleApproximates'] != null
+          ? (json['titleApproximates'] as List)
+                .map((approx) => approx as String)
+                .toList()
+          : null,
       titleHints: json['titleHints'] != null
           ? (json['titleHints'] as List).map((hint) => hint as String).toList()
           : null,
@@ -111,6 +121,7 @@ class Story extends Equatable {
       'pov': pov,
       'povHints': povHints,
       'title': title,
+      'titleApproximates': titleApproximates,
       'titleHints': titleHints,
       'updatedOn': updatedOn?.toUtc().toString(),
     };
@@ -129,7 +140,8 @@ class Story extends Equatable {
   static final Story storyExample1 = Story(
     id: '12345678900',
     title: 'Shrek',
-    titleHints: ['ogre', 'green ogre', 'shrekt'],
+    titleApproximates: ['shrekt', 'sherk', 'shreek'],
+    titleHints: ['ogre', 'green ogre', 'the greatest fairy tale never told'],
     pov: ['farquaad', 'lord farquaad'],
     povHints: ['lord', 'king', 'little guy'],
     createdBy: 'user12345',

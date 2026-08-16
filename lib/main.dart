@@ -34,7 +34,6 @@ Future<void> main() async {
 class OnceUponATime extends StatelessWidget {
   const OnceUponATime({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(

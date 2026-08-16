@@ -3,13 +3,18 @@ part of 'settings_cubit.dart';
 enum SettingsFont { alagard, holdMoney, storybook, zero }
 
 class SettingsState with Equatable {
+  final bool randomizeFont;
   final bool showActionButtons;
   final SettingsFont font;
 
-  const SettingsState({required this.font, required this.showActionButtons});
+  const SettingsState({
+    required this.font,
+    required this.randomizeFont,
+    required this.showActionButtons,
+  });
 
   @override
-  List<Object> get props => [font, showActionButtons];
+  List<Object> get props => [font, randomizeFont, showActionButtons];
 
   String? get fontFamily => font == SettingsFont.alagard
       ? 'Alagard'
@@ -22,12 +27,21 @@ class SettingsState with Equatable {
       : null; // 'Default';
 
   factory SettingsState.initial() {
-    return SettingsState(font: SettingsFont.zero, showActionButtons: false);
+    return SettingsState(
+      font: SettingsFont.zero,
+      randomizeFont: true,
+      showActionButtons: false,
+    );
   }
 
-  SettingsState copyWith({bool? showActionButtons, SettingsFont? font}) {
+  SettingsState copyWith({
+    bool? showActionButtons,
+    bool? randomizeFont,
+    SettingsFont? font,
+  }) {
     return SettingsState(
       font: font ?? this.font,
+      randomizeFont: randomizeFont ?? this.randomizeFont,
       showActionButtons: showActionButtons ?? this.showActionButtons,
     );
   }
@@ -39,11 +53,16 @@ class SettingsState with Equatable {
 
     return SettingsState(
       font: settingsFont,
+      randomizeFont: json['randomizeFont'],
       showActionButtons: json['showActionButtons'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'font': font.name, 'showActionButtons': showActionButtons};
+    return {
+      'font': font.name,
+      'randomizeFont': randomizeFont,
+      'showActionButtons': showActionButtons,
+    };
   }
 }

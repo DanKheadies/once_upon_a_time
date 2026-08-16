@@ -7,6 +7,15 @@ sealed class StoryEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class CacheTab extends StoryEvent {
+  final WriterTabType tab;
+
+  const CacheTab({required this.tab});
+
+  @override
+  List<Object> get props => [tab];
+}
+
 class CreateStory extends StoryEvent {
   final Story newStory;
 
@@ -32,6 +41,15 @@ class GetStories extends StoryEvent {
 
   @override
   List<Object?> get props => [showArchived];
+}
+
+class GetStoryById extends StoryEvent {
+  final String storyId;
+
+  const GetStoryById({required this.storyId});
+
+  @override
+  List<Object> get props => [storyId];
 }
 
 class NewStory extends StoryEvent {

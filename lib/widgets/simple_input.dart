@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 
 class SimpleInput extends StatelessWidget {
   final bool? isMulti;
+  final bool? isWrong;
   final bool? nextOnEnter;
   final bool? obscureText;
+  final bool? selectOnTap;
+  final Function()? onTap;
   final Function(String)? onChanged;
   final Function(String)? onEnter;
   final String labelText;
@@ -15,9 +18,12 @@ class SimpleInput extends StatelessWidget {
     required this.labelText,
     this.onChanged,
     this.onEnter,
+    this.onTap,
     this.isMulti = false,
+    this.isWrong = false,
     this.nextOnEnter = true,
     this.obscureText = false,
+    this.selectOnTap = false,
   });
 
   @override
@@ -29,6 +35,14 @@ class SimpleInput extends StatelessWidget {
           : TextCapitalization.none,
       onChanged: onChanged,
       onSubmitted: onEnter,
+      onTap: selectOnTap!
+          ? () {
+              controller.selection = TextSelection(
+                baseOffset: 0,
+                extentOffset: controller.value.text.length,
+              );
+            }
+          : onTap,
       textInputAction: isMulti!
           ? TextInputAction.newline
           : nextOnEnter!
@@ -42,7 +56,9 @@ class SimpleInput extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.primary,
+            color: isWrong!
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.primary,
             width: 1,
           ),
         ),

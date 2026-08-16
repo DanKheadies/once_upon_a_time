@@ -17,7 +17,7 @@ class ErrorScreen extends StatelessWidget {
           const SizedBox(height: 50, width: double.infinity),
           TextButton(
             onPressed: () {
-              context.goNamed('home');
+              context.goNamed('story');
             },
             child: Text('Home Please'),
           ),

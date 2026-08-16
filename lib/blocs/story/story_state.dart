@@ -7,23 +7,26 @@ class StoryState extends Equatable {
   final Story currentStory;
   final Story newStory;
   final StoryStateStatus status;
-  final String? errorMessage;
+  final String errorMessage;
+  final WriterTabType tabType;
 
   const StoryState({
     this.currentStory = Story.emptyStory,
+    this.errorMessage = '',
     this.newStory = Story.emptyStory,
     this.status = StoryStateStatus.initial,
     this.stories = const [],
-    this.errorMessage,
+    this.tabType = WriterTabType.create,
   });
 
   @override
-  List<Object?> get props => [
+  List<Object> get props => [
     currentStory,
     errorMessage,
     newStory,
     status,
     stories,
+    tabType,
   ];
 
   StoryState copyWith({
@@ -32,6 +35,7 @@ class StoryState extends Equatable {
     Story? newStory,
     StoryStateStatus? status,
     String? errorMessage,
+    WriterTabType? tabType,
   }) {
     return StoryState(
       currentStory: currentStory ?? this.currentStory,
@@ -39,6 +43,7 @@ class StoryState extends Equatable {
       newStory: newStory ?? this.newStory,
       status: status ?? this.status,
       stories: stories ?? this.stories,
+      tabType: tabType ?? this.tabType,
     );
   }
 
@@ -55,6 +60,9 @@ class StoryState extends Equatable {
         (status) => status.name == json['status'],
       ),
       stories: storiesList,
+      tabType: WriterTabType.values.firstWhere(
+        (tab) => tab.name == json['tabType'],
+      ),
     );
   }
 
@@ -72,6 +80,7 @@ class StoryState extends Equatable {
       'newStory': newStory.toJson(),
       'status': status.name,
       'stories': storiesList,
+      'tabType': tabType.name,
     };
   }
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
 class EditModal extends StatefulWidget {
@@ -52,14 +51,8 @@ class _EditModalState extends State<EditModal> {
             SimpleInput(
               controller: newContent,
               labelText: 'Content',
-              // initialValue: widget.content,
               isMulti: widget.isMulti,
-              // onChanged: (value) {
-              //   setState(() {
-              //     newContent.text = value;
-              //   });
-              // },
-              // onEnter: (_) {},
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 20),
             Center(

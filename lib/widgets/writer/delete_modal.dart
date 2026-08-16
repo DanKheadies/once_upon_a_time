@@ -1,20 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:once_upon_a_time/barrel.dart';
 
 class DeleteModal extends StatefulWidget {
   final Future<bool> Function() onDelete;
   final String title;
-  // final VoidCallback onUpdate;
 
-  const DeleteModal({
-    super.key,
-    required this.onDelete,
-    // required this.onUpdate,
-    required this.title,
-  });
+  const DeleteModal({super.key, required this.onDelete, required this.title});
 
   @override
   State<DeleteModal> createState() => _DeleteModalState();

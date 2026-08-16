@@ -1,21 +1,29 @@
+import 'dart:math';
+
 import 'package:equatable/equatable.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 
 part 'settings_state.dart';
 
 class SettingsCubit extends HydratedCubit<SettingsState> {
-  SettingsCubit() : super(SettingsState.initial());
+  SettingsCubit() : super(SettingsState.initial()) {
+    if (state.randomizeFont) randomizeFont();
+  }
+
+  void randomizeFont() {
+    SettingsFont currentFont = state.font;
+    List<SettingsFont> fontsList = [];
+    for (var font in SettingsFont.values) {
+      fontsList.add(font);
+    }
+    fontsList.removeWhere((font) => font == currentFont);
+    int index = Random().nextInt(fontsList.length);
+    emit(state.copyWith(font: fontsList[index], randomizeFont: true));
+  }
 
   void rotateFonts() {
     SettingsFont currentFont = state.font;
 
-    // if (currentFont == SettingsFont.alagard) {
-    //   emit(state.copyWith(font: SettingsFont.holdMoney));
-    // } else if (currentFont == SettingsFont.holdMoney) {
-    //   emit(state.copyWith(font: SettingsFont.storybook));
-    // } else if (currentFont == SettingsFont.storybook) {
-    //   emit(state.copyWith(font: SettingsFont.alagard));
-    // }
     emit(
       state.copyWith(
         font: currentFont == SettingsFont.zero
@@ -27,6 +35,7 @@ class SettingsCubit extends HydratedCubit<SettingsState> {
             : currentFont == SettingsFont.storybook
             ? SettingsFont.zero
             : SettingsFont.zero,
+        randomizeFont: false,
       ),
     );
   }

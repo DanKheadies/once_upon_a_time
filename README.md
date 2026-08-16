@@ -19,9 +19,6 @@ Stories retold from a new perspective. Can you figure out the what and who?
 > [Alagard](https://www.dafont.com/alagard.font)
 > via Hewett Tsoi
 
-> [Anime Fire](https://godotshaders.com/shader/anime-style-fire-2d/)
-> via Profesor Shader
-
 ### Special Thanks:
 
 - [Flutter](https://flutter.dev/)

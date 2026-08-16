@@ -19,6 +19,7 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
   TextEditingController chaptersCont = TextEditingController();
   TextEditingController povCont = TextEditingController();
   TextEditingController povHintsCont = TextEditingController();
+  TextEditingController titleApproxCont = TextEditingController();
   TextEditingController titleCont = TextEditingController();
   TextEditingController titleHintsCont = TextEditingController();
 
@@ -34,6 +35,7 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
     chaptersCont.dispose();
     povCont.dispose();
     povHintsCont.dispose();
+    titleApproxCont.dispose();
     titleCont.dispose();
     titleHintsCont.dispose();
 
@@ -48,19 +50,12 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
           (previous.status == StoryStateStatus.updating &&
               current.status == StoryStateStatus.updated),
       listener: (context, state) {
-        if (state.errorMessage != null && state.errorMessage != '') {
+        if (state.errorMessage != '') {
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage ?? 'Something went wrong.'),
-              ),
-            );
+            ..showSnackBar(SnackBar(content: Text(state.errorMessage)));
         }
         if (state.status == StoryStateStatus.updated) {
-          // print('successful update; clear out');
-          // Note: shouldn't use this; it just makes the inputs "dead"
-          // initializeControllers();
           clearControllers();
 
           ScaffoldMessenger.of(context)
@@ -92,12 +87,7 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                 context.read<StoryBloc>().add(
                   UpdateNewStory(newStory: Story.emptyStory),
                 );
-                // initializeControllers();
                 clearControllers();
-                // setState(() {
-                //   titleOverride = 'CLEAR';
-                //   titleCont.clear();
-                // });
               },
               child: SizedBox(
                 height: widget.height,
@@ -105,6 +95,8 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                   physics: AlwaysScrollableScrollPhysics(),
                   child: Column(
                     children: [
+                      SizedBox(height: 25, width: widget.width),
+                      Text('Pull down to reset'),
                       SizedBox(height: 25, width: widget.width),
                       Container(
                         padding: rowPadding,
@@ -120,75 +112,6 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                             );
                           },
                         ),
-                        // child: CustomInput(
-                        //   labelText: 'Title',
-                        //   initialValue: titleOverride ?? state.newStory.title,
-                        //   cont: titleCont,
-                        //   onChanged: (value) {
-                        //     context.read<StoryBloc>().add(
-                        //       UpdateNewStory(
-                        //         newStory: state.newStory.copyWith(title: value),
-                        //       ),
-                        //     );
-                        //   },
-                        // ),
-                        // child: TextField(
-                        //   controller: titleCont,
-                        //   onChanged: (value) {
-                        //     context.read<StoryBloc>().add(
-                        //       UpdateNewStory(
-                        //         newStory: state.newStory.copyWith(title: value),
-                        //       ),
-                        //     );
-                        //   },
-                        //   onSubmitted: (value) {
-                        //     context.read<StoryBloc>().add(
-                        //       UpdateNewStory(
-                        //         newStory: state.newStory.copyWith(title: value),
-                        //       ),
-                        //     );
-                        //   },
-                        //   decoration: InputDecoration(
-                        //     labelText: 'Title',
-                        //     labelStyle: TextStyle(
-                        //       color: Theme.of(context).colorScheme.onSurface,
-                        //     ),
-                        //     filled: true,
-                        //     fillColor: Theme.of(
-                        //       context,
-                        //     ).scaffoldBackgroundColor,
-                        //     enabledBorder: OutlineInputBorder(
-                        //       borderRadius: BorderRadius.circular(8),
-                        //       borderSide: BorderSide(
-                        //         color: Theme.of(context).colorScheme.primary,
-                        //         width: 1,
-                        //       ),
-                        //     ),
-                        //     focusedBorder: OutlineInputBorder(
-                        //       borderRadius: BorderRadius.circular(8),
-                        //       borderSide: BorderSide(
-                        //         color: Theme.of(context).colorScheme.surface,
-                        //         width: 2,
-                        //       ),
-                        //     ),
-                        //     focusedErrorBorder: OutlineInputBorder(
-                        //       borderRadius: BorderRadius.circular(8),
-                        //       borderSide: BorderSide(
-                        //         color: Theme.of(context).colorScheme.error,
-                        //         width: 2,
-                        //       ),
-                        //     ),
-                        //   ),
-                        //   style: TextStyle(
-                        //     color: Theme.of(context).colorScheme.surface,
-                        //   ),
-                        //   // maxLines: widget.obscureText!
-                        //   //     ? 1
-                        //   //     : widget.isMulti!
-                        //   //     ? null
-                        //   //     : 2,
-                        //   // minLines: widget.isMulti! ? 3 : 1,
-                        // ),
                       ),
                       // TODO: refactor Title Hints as a link & subsection here
                       Container(
@@ -203,76 +126,9 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                   child: SimpleInput(
                                     controller: povCont,
                                     labelText: 'Point of View',
-                                    // onChanged: (value) {
-                                    //   context.read<StoryBloc>().add(
-                                    //     UpdateNewStory(
-                                    //       newStory: state.newStory.copyWith(
-                                    //         title: value,
-                                    //       ),
-                                    //     ),
-                                    //   );
-                                    // },
                                     onEnter: (_) =>
                                         addPOV(context, state.newStory),
                                   ),
-                                  // child: CustomInput(
-                                  //   labelText: 'Point of View',
-                                  //   cont: povCont,
-                                  //   onEnter: (_) =>
-                                  //       addPOV(context, state.newStory),
-                                  // ),
-                                  // child: TextField(
-                                  //   controller: povCont,
-                                  //   onChanged: (value) {
-                                  //     // TODO: update controller (?)
-                                  //   },
-                                  //   onSubmitted: (value) =>
-                                  //       addPOV(context, state.newStory),
-                                  //   decoration: InputDecoration(
-                                  //     labelText: 'Point of View',
-                                  //     labelStyle: TextStyle(
-                                  //       color: Theme.of(
-                                  //         context,
-                                  //       ).colorScheme.onSurface,
-                                  //     ),
-                                  //     filled: true,
-                                  //     fillColor: Theme.of(
-                                  //       context,
-                                  //     ).scaffoldBackgroundColor,
-                                  //     enabledBorder: OutlineInputBorder(
-                                  //       borderRadius: BorderRadius.circular(8),
-                                  //       borderSide: BorderSide(
-                                  //         color: Theme.of(
-                                  //           context,
-                                  //         ).colorScheme.primary,
-                                  //         width: 1,
-                                  //       ),
-                                  //     ),
-                                  //     focusedBorder: OutlineInputBorder(
-                                  //       borderRadius: BorderRadius.circular(8),
-                                  //       borderSide: BorderSide(
-                                  //         color: Theme.of(
-                                  //           context,
-                                  //         ).colorScheme.surface,
-                                  //         width: 2,
-                                  //       ),
-                                  //     ),
-                                  //     focusedErrorBorder: OutlineInputBorder(
-                                  //       borderRadius: BorderRadius.circular(8),
-                                  //       borderSide: BorderSide(
-                                  //         color: Theme.of(
-                                  //           context,
-                                  //         ).colorScheme.error,
-                                  //         width: 2,
-                                  //       ),
-                                  //     ),
-                                  //   ),
-                                  //   style: TextStyle(
-                                  //     color: Theme.of(
-                                  //       context,
-                                  //     ).colorScheme.surface,
-                                  //   ),
-                                  // ),
                                 ),
                                 const SizedBox(width: 10),
                                 IconButton(
@@ -312,7 +168,6 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                       return EditModal(
                                         content: state.newStory.pov[index],
                                         index: index,
-                                        // isMulti: true,
                                         newStory: state.newStory,
                                         onUpdate: (newValue) {
                                           List<String> updatedPOV = state
@@ -354,65 +209,6 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                     onEnter: (_) =>
                                         addChapter(context, state.newStory),
                                   ),
-                                  // child: CustomInput(
-                                  //   labelText: 'Chapters',
-                                  //   cont: chaptersCont,
-                                  //   isMulti: true,
-                                  //   onEnter: (_) =>
-                                  //       addChapter(context, state.newStory),
-                                  // ),
-                                  // child: TextField(
-                                  //   controller: chaptersCont,
-                                  //   onChanged: (value) {
-                                  //     // TODO: update controller (?)
-                                  //   },
-                                  //   onSubmitted: (value) =>
-                                  //       addChapter(context, state.newStory),
-                                  //   decoration: InputDecoration(
-                                  //     labelText: 'Chapters',
-                                  //     labelStyle: TextStyle(
-                                  //       color: Theme.of(
-                                  //         context,
-                                  //       ).colorScheme.onSurface,
-                                  //     ),
-                                  //     filled: true,
-                                  //     fillColor: Theme.of(
-                                  //       context,
-                                  //     ).scaffoldBackgroundColor,
-                                  //     enabledBorder: OutlineInputBorder(
-                                  //       borderRadius: BorderRadius.circular(8),
-                                  //       borderSide: BorderSide(
-                                  //         color: Theme.of(
-                                  //           context,
-                                  //         ).colorScheme.primary,
-                                  //         width: 1,
-                                  //       ),
-                                  //     ),
-                                  //     focusedBorder: OutlineInputBorder(
-                                  //       borderRadius: BorderRadius.circular(8),
-                                  //       borderSide: BorderSide(
-                                  //         color: Theme.of(
-                                  //           context,
-                                  //         ).colorScheme.surface,
-                                  //         width: 2,
-                                  //       ),
-                                  //     ),
-                                  //     focusedErrorBorder: OutlineInputBorder(
-                                  //       borderRadius: BorderRadius.circular(8),
-                                  //       borderSide: BorderSide(
-                                  //         color: Theme.of(
-                                  //           context,
-                                  //         ).colorScheme.error,
-                                  //         width: 2,
-                                  //       ),
-                                  //     ),
-                                  //   ),
-                                  //   style: TextStyle(
-                                  //     color: Theme.of(
-                                  //       context,
-                                  //     ).colorScheme.surface,
-                                  //   ),
-                                  // ),
                                 ),
                                 const SizedBox(width: 10),
                                 IconButton(
@@ -491,17 +287,106 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                 Flexible(
                                   flex: 1,
                                   child: SimpleInput(
+                                    controller: titleApproxCont,
+                                    labelText: 'Title Approximates',
+                                    onEnter: (_) =>
+                                        addTitleApprox(context, state.newStory),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                IconButton(
+                                  icon: Icon(Icons.add),
+                                  onPressed: () =>
+                                      addTitleApprox(context, state.newStory),
+                                ),
+                              ],
+                            ),
+                            if (state.newStory.titleApproximates != null) ...[
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount:
+                                    state.newStory.titleApproximates!.length,
+                                itemBuilder: (context, index) => ListTile(
+                                  title: Text(
+                                    state.newStory.titleApproximates![index],
+                                  ),
+                                  trailing: IconButton(
+                                    icon: Icon(Icons.remove),
+                                    onPressed: () {
+                                      List<String> titleApproxList = state
+                                          .newStory
+                                          .titleApproximates!
+                                          .toList();
+                                      titleApproxList.remove(
+                                        state
+                                            .newStory
+                                            .titleApproximates![index],
+                                      );
+
+                                      context.read<StoryBloc>().add(
+                                        UpdateNewStory(
+                                          newStory: state.newStory.copyWith(
+                                            titleApproximates: titleApproxList,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  contentPadding: const EdgeInsets.only(
+                                    left: 16,
+                                  ),
+                                  onLongPress: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return EditModal(
+                                          content: state
+                                              .newStory
+                                              .titleApproximates![index],
+                                          index: index,
+                                          newStory: state.newStory,
+                                          onUpdate: (newValue) {
+                                            List<String> updatedTitleApprox =
+                                                state.newStory.chapters
+                                                    .toList();
+                                            updatedTitleApprox[index] =
+                                                newValue;
+                                            context.read<StoryBloc>().add(
+                                              UpdateNewStory(
+                                                newStory: state.newStory
+                                                    .copyWith(
+                                                      titleApproximates:
+                                                          updatedTitleApprox,
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: rowPadding,
+                        width: widget.width < 850 ? widget.width : 500,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  flex: 1,
+                                  child: SimpleInput(
                                     controller: titleHintsCont,
                                     labelText: 'Title Hints',
                                     onEnter: (_) =>
                                         addTitleHints(context, state.newStory),
                                   ),
-                                  // child: CustomInput(
-                                  //   labelText: 'Title Hints',
-                                  //   cont: titleHintsCont,
-                                  //   onEnter: (_) =>
-                                  //       addTitleHints(context, state.newStory),
-                                  // ),
                                 ),
                                 const SizedBox(width: 10),
                                 IconButton(
@@ -551,19 +436,18 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                           content:
                                               state.newStory.titleHints![index],
                                           index: index,
-                                          // isMulti: true,
                                           newStory: state.newStory,
                                           onUpdate: (newValue) {
-                                            List<String> updatedChapters = state
-                                                .newStory
-                                                .chapters
-                                                .toList();
-                                            updatedChapters[index] = newValue;
+                                            List<String> updatedTitleHints =
+                                                state.newStory.chapters
+                                                    .toList();
+                                            updatedTitleHints[index] = newValue;
                                             context.read<StoryBloc>().add(
                                               UpdateNewStory(
                                                 newStory: state.newStory
                                                     .copyWith(
-                                                      chapters: updatedChapters,
+                                                      chapters:
+                                                          updatedTitleHints,
                                                     ),
                                               ),
                                             );
@@ -593,12 +477,6 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                     onEnter: (_) =>
                                         addPOVHints(context, state.newStory),
                                   ),
-                                  // child: CustomInput(
-                                  //   labelText: 'POV Hints',
-                                  //   cont: povHintsCont,
-                                  //   onEnter: (_) =>
-                                  //       addPOVHints(context, state.newStory),
-                                  // ),
                                 ),
                                 const SizedBox(width: 10),
                                 IconButton(
@@ -646,7 +524,6 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
                                           content:
                                               state.newStory.povHints![index],
                                           index: index,
-                                          // isMulti: true,
                                           newStory: state.newStory,
                                           onUpdate: (newValue) {
                                             List<String> updatedPOVHints =
@@ -805,6 +682,24 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
     }
   }
 
+  void addTitleApprox(BuildContext context, Story newStory) {
+    if (titleApproxCont.text != '') {
+      List<String> titleApproxList = (newStory.titleApproximates ?? [])
+          .toList();
+      titleApproxList.add(titleApproxCont.text);
+
+      context.read<StoryBloc>().add(
+        UpdateNewStory(
+          newStory: newStory.copyWith(titleApproximates: titleApproxList),
+        ),
+      );
+
+      setState(() {
+        titleApproxCont.clear();
+      });
+    }
+  }
+
   void addTitleHints(BuildContext context, Story newStory) {
     if (titleHintsCont.text != '') {
       List<String> titleHintsList = (newStory.titleHints ?? []).toList();
@@ -825,6 +720,7 @@ class _CreateStoryPaneState extends State<CreateStoryPane> {
       chaptersCont.clear();
       povCont.clear();
       povHintsCont.clear();
+      titleApproxCont.clear();
       titleCont.clear();
       titleHintsCont.clear();
     });

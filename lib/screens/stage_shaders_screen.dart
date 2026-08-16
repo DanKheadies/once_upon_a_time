@@ -62,7 +62,7 @@ class _StageShadersScreenState extends State<StageShadersScreen> {
         leading: IconButton(
           icon: Icon(Icons.chevron_left),
           onPressed: () {
-            context.goNamed('home');
+            context.goNamed('story');
           },
         ),
         actions: [
